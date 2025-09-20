@@ -1,8 +1,8 @@
 // Configuration for different environments
 const config = {
   development: {
-    baseURL: 'http://192.168.254.207:3000',
-    apiURL: 'http://192.168.254.207:3000'
+    baseURL: 'https://notive-app.onrender.com',
+    apiURL: 'https://notive-app.onrender.com'
   },
   production: {
     baseURL: 'https://notive-app.onrender.com',
