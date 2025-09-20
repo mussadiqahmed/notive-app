@@ -6,188 +6,178 @@ import {
   Dimensions,
   Text,
   Image,
+  ScrollView,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import SettingsDropdown from "./Settings_Dropdown";
-import { useDarkMode } from "./DarkModeContext"; // Import the custom hook
+import { useDarkMode } from "./DarkModeContext";
 
 const { width, height } = Dimensions.get("window");
 
-const Appearance = ({ navigation }) => {
-  const { isDarkMode, toggleDarkMode } = useDarkMode(); // Get dark mode state and toggle function
+// Responsive scaling functions (same as Change_Password.js)
+const scaleWidth = size => (width / 375) * size;
+const scaleHeight = size => (height / 812) * size;
+const scaleFont = (size, factor = 0.5) => size + (scaleWidth(size) - size) * factor;
 
-  // Dynamic styles based on the dark mode state
-  const dynamicStyles = isDarkMode ? darkModeStyles : lightModeStyles;
+const Appearance = ({ navigation }) => {
+  const { isDarkMode, toggleDarkMode } = useDarkMode();
+  const dynamicStyles = isDarkMode ? darkModeStyles : styles;
 
   return (
     <View style={[styles.container, dynamicStyles.container]}>
-      {/* Header */}
-      <View style={[styles.rectangle, dynamicStyles.rectangle]}>
-        <View style={styles.leftContainer}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.navigate("Navbar")}
-          >
-            <Icon
-              name="arrow-left"
-              size={width * 0.065}
-              color={dynamicStyles.iconColor}
-            />
-          </TouchableOpacity>
-          <Text style={[styles.text, dynamicStyles.text]}>Settings</Text>
+      <ScrollView 
+        contentContainerStyle={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={[styles.rectangle, dynamicStyles.rectangle]}>
+          <View style={styles.leftContainer}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.navigate("Navbar")}
+            >
+              <Icon
+                name="arrow-left"
+                size={scaleFont(24)}
+                color={isDarkMode ? "white" : "black"}
+              />
+            </TouchableOpacity>
+            <Text style={[styles.text, dynamicStyles.text]}>Settings</Text>
+          </View>
         </View>
-      </View>
 
-      {/* Settings Dropdown */}
-      <View style={[styles.rectangle_body, dynamicStyles.rectangle_body]}>
-        <SettingsDropdown />
-        <Text style={[styles.label_Pass, dynamicStyles.label_Pass]}>
-          Appearance
-        </Text>
-
-        {/* Light Mode Image */}
-        <TouchableOpacity
-          style={[styles.imageContainer, !isDarkMode && styles.selectedBorder]}
-          onPress={() => {
-            toggleDarkMode(); // Toggle to light mode
-          }}
-        >
-          <Image
-            source={require("../../../assets/LightMode.png")}
-            style={styles.image}
-            resizeMode="contain"
-          />
-          <Text style={[styles.modeText, dynamicStyles.modeText]}>
-            Light Mode
+        {/* Settings Dropdown */}
+        <View style={[styles.rectangle_body, dynamicStyles.rectangle_body]}>
+          <SettingsDropdown />
+          <Text style={[styles.label_Pass, dynamicStyles.label_Pass]}>
+            Appearance
           </Text>
-        </TouchableOpacity>
 
-        {/* Dark Mode Image */}
-        <TouchableOpacity
-          style={[styles.imageContainer, isDarkMode && styles.selectedBorder]}
-          onPress={() => {
-            toggleDarkMode(); // Toggle to dark mode
-          }}
-        >
-          <Image
-            source={require("../../../assets/DarkMode.png")}
-            style={styles.image}
-            resizeMode="contain"
-          />
-          <Text style={[styles.modeText, dynamicStyles.modeText]}>
-            Dark Mode
-          </Text>
-        </TouchableOpacity>
-      </View>
+          {/* Light Mode Image */}
+          <TouchableOpacity
+            style={[styles.imageContainer, !isDarkMode && styles.selectedBorder]}
+            onPress={() => toggleDarkMode()}
+          >
+            <Image
+              source={require("../../../assets/LightMode.png")}
+              style={styles.image}
+              resizeMode="contain"
+            />
+            <Text style={[styles.modeText, dynamicStyles.modeText]}>
+              Light Mode
+            </Text>
+          </TouchableOpacity>
+
+          {/* Dark Mode Image */}
+          <TouchableOpacity
+            style={[styles.imageContainer, isDarkMode && styles.selectedBorder]}
+            onPress={() => toggleDarkMode()}
+          >
+            <Image
+              source={require("../../../assets/DarkMode.png")}
+              style={styles.image}
+              resizeMode="contain"
+            />
+            <Text style={[styles.modeText, dynamicStyles.modeText]}>
+              Dark Mode
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </View>
   );
 };
 
 export default Appearance;
 
-/** ✅ Styles */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F4F4F4",
+  },
+  scrollView: {
     alignItems: "center",
-    paddingTop: height * 0.05,
+    paddingTop: scaleHeight(40),
+    flexGrow: 1,
   },
   rectangle: {
     flexDirection: "row",
     alignItems: "center",
-    width: width * 0.9,
-    paddingVertical: height * 0.03,
-    paddingLeft: width * 0.03,
+    width: "90%",
+    paddingVertical: scaleHeight(25),
+    paddingLeft: scaleFont(15),
     borderWidth: 1,
     borderColor: "#EFEFEF",
     borderRadius: 16,
     backgroundColor: "#FCFCFC",
-    marginTop: height * 0.015,
+    alignSelf: "center",
+  },
+  rectangle_body: {
+    alignItems: "center",
+    width: "90%",
+    paddingVertical: scaleHeight(20),
+    borderRadius: 16,
+    minHeight: '80%',
+    backgroundColor: "#FCFCFC",
+    marginTop: scaleHeight(15),
+    alignSelf: "center",
+    marginBottom: scaleHeight(20),
   },
   leftContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
   text: {
-    fontSize: width * 0.055,
+    fontSize: scaleFont(20),
     fontWeight: "700",
     color: "black",
-    marginLeft: width * 0.03,
-  },
-  rectangle_body: {
-    alignItems: "center",
-    width: width * 0.9,
-    paddingVertical: height * 0.03,
-    borderRadius: 16,
-    backgroundColor: "#FCFCFC",
-    marginTop: height * 0.015,
-    height: height * 0.83,
+    marginLeft: scaleFont(15),
   },
   label_Pass: {
     alignSelf: "flex-start",
-    marginLeft: width * 0.05,
-    fontSize: width * 0.07,
+    marginLeft: scaleFont(20),
+    fontSize: scaleFont(24),
     fontWeight: "900",
     color: "black",
-    marginBottom: height * 0.03,
+    marginTop: scaleHeight(5),
+    marginBottom: scaleHeight(20),
   },
   imageContainer: {
     alignItems: "center",
-    padding: 5,
+    padding: scaleFont(5),
     borderRadius: 12,
-    marginBottom: height * 0.02,
+    marginBottom: scaleHeight(20),
     width: "90%",
   },
   selectedBorder: {
     borderWidth: 2,
-    borderColor: "blue",
+    borderColor: "#7C3DFA", // Using the same purple as Change_Password.js
   },
   modeText: {
-    fontSize: width * 0.05,
+    fontSize: scaleFont(16),
     fontWeight: "700",
     color: "black",
     alignSelf: "flex-start",
-    marginTop: height * 0.04,
-    paddingHorizontal: height * 0.025,
+    marginTop: scaleHeight(15),
+    paddingHorizontal: scaleFont(10),
   },
   image: {
-    width: width * 0.85,
-    height: height * 0.2,
+    width: "100%",
+    height: scaleHeight(150),
     borderRadius: 12,
   },
 });
-
-const lightModeStyles = {
-  container: {
-    backgroundColor: "#F4F4F4",
-  },
-  iconColor: "black",
-  text: {
-    color: "black",
-  },
-  rectangle_body: {
-    backgroundColor: "#FCFCFC",
-  },
-  label_Pass: {
-    color: "black",
-  },
-  modeText: {
-    color: "black",
-  },
-};
 
 const darkModeStyles = {
   container: {
     backgroundColor: "#111315",
   },
-  iconColor: "white",
+  rectangle: {
+    borderColor: "#1A1D1F",
+    backgroundColor: "#1A1D1F",
+  },
   text: {
     color: "white",
-  },
-  rectangle: {
-    backgroundColor: "#1A1D1F",
-    borderColor: "black",
   },
   rectangle_body: {
     backgroundColor: "#1A1D1F",

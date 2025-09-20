@@ -2,71 +2,29 @@ import React, { useState } from "react";
 import {
   View,
   Image,
-  TouchableOpacity,
   Dimensions,
   StyleSheet,
+  TouchableOpacity,
   Text,
-  TextInput,
-  Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import * as FileSystem from "expo-file-system";
-import * as MediaLibrary from "expo-media-library"; // For saving to media library
-import * as ImagePicker from "expo-image-picker"; // To pick images from the gallery
+import { useDarkMode } from "../Settings/DarkModeContext";
 
-const { width } = Dimensions.get("window");
+const { width, height} = Dimensions.get("window");
 
 const ImageNote = ({ imageUri, onRemove }) => {
   const [aspectRatio, setAspectRatio] = useState(1);
-  const [comment, setComment] = useState("");
-  const [isCommenting, setIsCommenting] = useState(false); // Track if the comment field should be visible
+  const [isCommenting, setIsCommenting] = useState(false);
+  const { isDarkMode } = useDarkMode();
+  const dynamicStyles = isDarkMode ? darkModeStyles : styles;
 
-  // Function to handle download
-  const handleDownload = async () => {
-    try {
-      // Request permissions to access the media library (for saving)
-      const permission = await MediaLibrary.requestPermissionsAsync();
-      if (permission.status !== "granted") {
-        Alert.alert("Permission Denied", "Please grant media library access.");
-        return;
-      }
-
-      // Ensure the file is a local URI (if it's from the gallery, it will be 'file://')
-      const fileUri = imageUri; // Path to store the image in real storage (gallery)
-
-      if (imageUri.startsWith("file://")) {
-        // If the image URI is a local URI (picked from the gallery), save to real storage
-        const asset = await MediaLibrary.createAssetAsync(fileUri);
-
-        // Create an album (folder) named "Notive" inside DCIM, or add the image to it
-        const album = await MediaLibrary.getAlbumAsync("Notive");
-
-        if (album === null) {
-          // If the "Notive" album doesn't exist, create it
-          await MediaLibrary.createAlbumAsync("Notive", asset, false);
-        } else {
-          // If the album exists, just add the asset to it
-          await MediaLibrary.addAssetsToAlbumAsync([asset], album.id, false);
-        }
-
-        // Show the success alert
-        Alert.alert("Success", "Image saved to DCIM/Notive album.");
-      } else {
-        throw new Error("Invalid image URI.");
-      }
-    } catch (error) {
-      console.error("Download error:", error);
-      Alert.alert("Download Failed", "Something went wrong while downloading.");
-    }
+  const handleDownload = () => {
+    // Download functionality can be implemented here
+    console.log('Download image:', imageUri);
   };
 
   const handleCommentPress = () => {
-    setIsCommenting(!isCommenting); // Toggle the comment input visibility
-  };
-
-  const handleSaveComment = () => {
-    // Handle saving the comment here
-    setIsCommenting(false); // Hide the comment input after saving
+    setIsCommenting(!isCommenting);
   };
 
   return (
@@ -86,33 +44,24 @@ const ImageNote = ({ imageUri, onRemove }) => {
         }}
       />
 
-      {/* Comment Input Field, only shown when isCommenting is true */}
-      {isCommenting && (
-        <TextInput
-          style={styles.commentInput}
-          value={comment}
-          multiline
-          onChangeText={setComment}
-          placeholder="Enter comment..."
-        />
-      )}
+
 
       {/* Buttons Row */}
-      <View style={styles.buttonRow}>
+      <View style={[styles.buttonRow, dynamicStyles.buttonRow]}>
         {/* Download Button */}
-        <TouchableOpacity onPress={handleDownload} style={styles.button}>
+        <TouchableOpacity onPress={handleDownload} style={[styles.button, dynamicStyles.button]}>
           <Icon name="arrow-down-circle" size={24} color="#6F767E" />
-          <Text style={styles.buttonText}>Download</Text>
+          <Text style={[styles.buttonText, dynamicStyles.buttonText]}>Download</Text>
         </TouchableOpacity>
 
         {/* Comment Button */}
-        <TouchableOpacity onPress={handleCommentPress} style={styles.button}>
+        <TouchableOpacity onPress={handleCommentPress} style={[styles.button, dynamicStyles.button]}>
           <Icon name="forum-outline" size={24} color="#6F767E" />
-          <Text style={styles.buttonText}>{isCommenting ? "Save" : "Comment"}</Text>
+          <Text style={[styles.buttonText, dynamicStyles.buttonText]}>{isCommenting ? "Save" : "Comment"}</Text>
         </TouchableOpacity>
 
         {/* Delete Button */}
-        <TouchableOpacity onPress={onRemove} style={styles.button}>
+        <TouchableOpacity onPress={onRemove} style={[styles.button, dynamicStyles.button]}>
           <Icon name="trash-can-outline" size={24} color="#F44336" />
           <Text style={styles.buttonDelText}>Delete</Text>
         </TouchableOpacity>
@@ -120,6 +69,7 @@ const ImageNote = ({ imageUri, onRemove }) => {
     </View>
   );
 };
+export default ImageNote;
 
 const styles = StyleSheet.create({
   container: {
@@ -130,45 +80,36 @@ const styles = StyleSheet.create({
   },
   buttonRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    width: "90%",
-    marginTop: width * 0.02,
-    alignSelf: "center",
+    justifyContent: "space-around",
+    width: "100%",
+    marginTop: 10,
   },
   button: {
-    flex: 1,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    paddingVertical: width * 0.02,
-    borderRadius: width * 0.02,
-    marginHorizontal: width * 0.015,
-    minWidth: 80,
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: "#f0f0f0",
   },
   buttonText: {
-    fontSize: width * 0.03,
-    fontFamily: "inter",
-    fontWeight: "700",
+    marginLeft: 5,
+    fontSize: 14,
     color: "#333",
-    marginTop: width * 0.01,
   },
   buttonDelText: {
-    fontSize: width * 0.03,
-    fontFamily: "inter",
-    fontWeight: "700",
-    color: "red",
-    marginTop: width * 0.01,
-  },
-  commentInput: {
-    width: "100%",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: width * 0.02,
-    padding: width * 0.02,
-    marginVertical: width * 0.02,
+    marginLeft: 5,
+    fontSize: 14,
+    color: "#F44336",
   },
 });
 
-export default ImageNote;
+const darkModeStyles = StyleSheet.create({
+  button: {
+    backgroundColor: "#2A2D2F",
+  },
+  buttonText: {
+    color: "#fff",
+  },
+});
+
+

@@ -9,13 +9,18 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import SettingsDropdown from "./Settings_Dropdown";
-import { useDarkMode } from "./DarkModeContext"; // Import the custom hook
+import { useDarkMode } from "./DarkModeContext";
 
 const { width, height } = Dimensions.get("window");
 
+// Responsive scaling functions
+const scaleWidth = size => (width / 375) * size;
+const scaleHeight = size => (height / 812) * size;
+const scaleFont = (size, factor = 0.5) => size + (scaleWidth(size) - size) * factor;
+
 const Notification = ({ navigation }) => {
   const [isEnabled, setIsEnabled] = useState(false);
-  const { isDarkMode } = useDarkMode(); // Access dark mode state
+  const { isDarkMode } = useDarkMode();
   const dynamicStyles = isDarkMode ? darkModeStyles : styles;
 
   const toggleSwitch = () => setIsEnabled((previousState) => !previousState);
@@ -31,7 +36,7 @@ const Notification = ({ navigation }) => {
           >
             <Icon
               name="arrow-left"
-              size={width * 0.07}
+              size={scaleFont(24)}
               style={dynamicStyles.iconColor}
             />
           </TouchableOpacity>
@@ -48,17 +53,15 @@ const Notification = ({ navigation }) => {
 
         {/* Label with Toggle Switch */}
         <View style={styles.switchContainer}>
-          {/* Text at the left */}
           <Text style={[styles.label, dynamicStyles.label]}>
             Allow Notive AI chat with you through notifications
           </Text>
 
-          {/* Rectangular background for Switch */}
           <View
             style={[
               styles.switchBackground,
               {
-                backgroundColor: isEnabled ? "#81b0ff" : "#767577", // Dynamic background color based on switch state
+                backgroundColor: isEnabled ? "#81b0ff" : "#767577",
               },
             ]}
           >
@@ -79,81 +82,80 @@ const Notification = ({ navigation }) => {
 
 export default Notification;
 
-/** ✅ Styles */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F4F4F4",
     alignItems: "center",
-    paddingTop: height * 0.05,
+    paddingTop: scaleHeight(40),
   },
   rectangle: {
     flexDirection: "row",
     alignItems: "center",
-    width: width * 0.9,
-    paddingVertical: height * 0.03,
-    paddingLeft: width * 0.03,
+    width: "90%",
+    paddingVertical: scaleHeight(25),
+    paddingLeft: scaleFont(15),
     borderWidth: 1,
     borderColor: "#EFEFEF",
     borderRadius: 16,
     backgroundColor: "#FCFCFC",
-    marginTop: height * 0.015,
+    alignSelf: "center",
   },
   leftContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
   text: {
-    fontSize: width * 0.055,
+    fontSize: scaleFont(20),
     fontWeight: "700",
     color: "black",
-    marginLeft: width * 0.03,
+    marginLeft: scaleFont(15),
   },
   rectangle_body: {
     alignItems: "center",
-    width: width * 0.9,
-    paddingVertical: height * 0.03,
+    width: "90%",
+    paddingVertical: scaleHeight(20),
     borderRadius: 16,
     backgroundColor: "#FCFCFC",
-    marginTop: height * 0.015,
-    height: height * 0.83,
+    marginTop: scaleHeight(15),
+    alignSelf: "center",
+    minHeight: "80%"
   },
   label_Pass: {
     alignSelf: "flex-start",
-    marginLeft: width * 0.05,
-    fontSize: width * 0.07,
-    fontWeight: "700",
+    marginLeft: scaleFont(20),
+    fontSize: scaleFont(24),
+    fontWeight: "900",
     color: "black",
-    marginBottom: height * 0.02,
-    marginTop: height * 0.01,
+    marginBottom: scaleHeight(10),
+    marginTop: scaleHeight(5),
   },
   label: {
     alignSelf: "flex-start",
-    fontSize: width * 0.045,
+    fontSize: scaleFont(16),
     fontWeight: "600",
-    fontfamily: "inter",
+    fontFamily: "inter",
     color: "#33383F",
-    marginBottom: height * 0.02,
-    marginTop: height * 0.02,
-    width: width * 0.6, // Ensure the text takes up space on the left
+    marginBottom: scaleHeight(10),
+    marginTop: scaleHeight(10),
+    width: "70%",
   },
   switchContainer: {
-    flexDirection: "row", // Align switch and label in a row
-    alignItems: "center", // Align them vertically
-    justifyContent: "space-between", // Ensure switch is on the right and text on the left
-    width: width * 0.82, // Set width to control layout
-    marginLeft: width * 0.01, // Add left margin to center the content
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "90%",
+    marginLeft: scaleFont(10),
   },
   switchBackground: {
-    backgroundColor: "#767577", // Default background color for the switch when disabled
-    borderRadius: 20, // Make the background rounded
-    width: 75, // Set width of the background rectangle
-    height: 40, // Set height of the background rectangle
-    justifyContent: "center", // Center the switch vertically
-    alignItems: "center", // Center the switch horizontally
+    borderRadius: 40,
+    width: scaleWidth(70),
+    height: scaleHeight(40),
+    justifyContent: "center",
+    alignItems: "center",
   },
   switch: {
-    transform: [{ scaleX: 2.0 }, { scaleY: 2.0 }], // Increase the size of the switch
+    transform: [{ scaleX: scaleFont(1.5) }, { scaleY: scaleFont(1.5) }],
   },
 });
 

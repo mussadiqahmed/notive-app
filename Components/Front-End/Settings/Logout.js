@@ -10,14 +10,21 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import SettingsDropdown from "./Settings_Dropdown";
-import { useDarkMode } from "./DarkModeContext"; // Import the custom hook
+import { useDarkMode } from "./DarkModeContext";
+import { useFolders } from "../Chat/FoldersContext";
 
 const { width, height } = Dimensions.get("window");
 
-const Logout = ({ navigation }) => {
-  const { isDarkMode } = useDarkMode(); // Access dark mode state
+// Responsive scaling functions
+const scaleWidth = size => (width / 375) * size;
+const scaleHeight = size => (height / 812) * size;
+const scaleFont = (size, factor = 0.5) => size + (scaleWidth(size) - size) * factor;
 
+const Logout = ({ navigation }) => {
+  const { isDarkMode } = useDarkMode();
+  const { logout } = useFolders();
   const dynamicStyles = isDarkMode ? darkModeStyles : styles;
+
   return (
     <View style={[styles.container, dynamicStyles.container]}>
       {/* Header */}
@@ -29,7 +36,7 @@ const Logout = ({ navigation }) => {
           >
             <Icon
               name="arrow-left"
-              size={width * 0.07}
+              size={scaleFont(24)}
               style={dynamicStyles.iconColor}
             />
           </TouchableOpacity>
@@ -43,11 +50,18 @@ const Logout = ({ navigation }) => {
         <Text style={[styles.label_Pass, dynamicStyles.label_Pass]}>
           Log out
         </Text>
-        <Text style={styles.label}>Log out of your account</Text>
+        <Text style={[styles.label, dynamicStyles.label]}>Log out of your account</Text>
 
         <TouchableOpacity
           style={[styles.confirmButton, dynamicStyles.confirmButton]}
-          onPress={() => navigation.navigate("SignIn")}
+          onPress={async () => {
+            await logout();
+            // Navigate to sign in after logout
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'SignIn' }],
+            });
+          }}
         >
           <Text style={[styles.confirmText, dynamicStyles.confirmText]}>
             Log out
@@ -60,67 +74,67 @@ const Logout = ({ navigation }) => {
 
 export default Logout;
 
-/** ✅ Styles */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F4F4F4",
     alignItems: "center",
-    paddingTop: height * 0.05,
+    paddingTop: scaleHeight(40),
   },
   rectangle: {
     flexDirection: "row",
     alignItems: "center",
-    width: width * 0.9,
-    paddingVertical: height * 0.03,
-    paddingLeft: width * 0.03,
+    width: "90%",
+    paddingVertical: scaleHeight(25),
+    paddingLeft: scaleFont(15),
     borderWidth: 1,
     borderColor: "#EFEFEF",
     borderRadius: 16,
     backgroundColor: "#FCFCFC",
-    marginTop: height * 0.015,
+    alignSelf: "center",
   },
   leftContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
   text: {
-    fontSize: width * 0.055,
+    fontSize: scaleFont(20),
     fontWeight: "700",
     color: "black",
-    marginLeft: width * 0.03,
+    marginLeft: scaleFont(15),
   },
   rectangle_body: {
     alignItems: "center",
-    width: width * 0.9,
-    paddingVertical: height * 0.03,
+    width: "90%",
+    paddingVertical: scaleHeight(20),
     borderRadius: 16,
     backgroundColor: "#FCFCFC",
-    marginTop: height * 0.015,
-    height: height * 0.83,
+    marginTop: scaleHeight(15),
+    alignSelf: "center",
+    minHeight: "80%",
   },
   label_Pass: {
     alignSelf: "flex-start",
-    marginLeft: width * 0.05,
-    fontSize: width * 0.07,
-    fontWeight: "700",
+    marginLeft: scaleFont(20),
+    fontSize: scaleFont(24),
+    fontWeight: "900",
     color: "black",
-    marginBottom: height * 0.02,
-    marginTop: height * 0.01,
+    marginBottom: scaleHeight(10),
+    marginTop: scaleHeight(5),
   },
   label: {
     alignSelf: "flex-start",
-    marginLeft: width * 0.05,
-    fontSize: width * 0.05,
+    marginLeft: scaleFont(20),
+    fontSize: scaleFont(19),
     fontWeight: "700",
     color: "red",
-    marginBottom: height * 0.02,
-    marginTop: height * 0.02,
+    marginBottom: scaleHeight(10),
+    marginTop: scaleHeight(30),
   },
   confirmButton: {
     backgroundColor: "#141718",
-    paddingVertical: height * 0.012,
-    paddingHorizontal: width * 0.04,
+    paddingVertical: scaleHeight(12),
+    paddingHorizontal: scaleFont(40),
     borderRadius: 50,
     alignItems: "center",
     width: "90%",
@@ -129,7 +143,7 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "700",
     fontFamily: "inter",
-    fontSize: width * 0.05,
+    fontSize: scaleFont(18),
   },
 });
 
@@ -141,7 +155,6 @@ const darkModeStyles = {
     borderColor: "#1A1D1F",
     backgroundColor: "#1A1D1F",
   },
-
   text: {
     color: "white",
   },

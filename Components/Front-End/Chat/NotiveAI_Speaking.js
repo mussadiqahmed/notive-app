@@ -8,43 +8,46 @@ import {
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import Waveform from "./Waveform"; // Import the waveform
+import { useDarkMode } from '../Settings/DarkModeContext'; // Import the dark mode hook
 
 const { width, height } = Dimensions.get("window");
 
-const NotiveAI_Speaking = () => {
+const NotiveAI_Speaking = ({navigation}) => {
   const [isListening, setIsListening] = useState(false);
+  const { isDarkMode } = useDarkMode(); // Access dark mode state
+  const dynamicStyles = isDarkMode ? darkModeStyles : styles;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.rectangle}>
+    <View style={[styles.container, dynamicStyles.container]}>
+      <View style={[styles.rectangle, dynamicStyles.rectangle]}>
         <View style={styles.leftContainer}>
-          <TouchableOpacity style={styles.backButton}>
-            <MaterialCommunityIcons name="arrow-left" size={width * 0.07} color="black" />
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("Navbar")}>
+            <MaterialCommunityIcons name="arrow-left" size={width * 0.07} color= {isDarkMode ? "white" : "black"} />
           </TouchableOpacity>
-          <Text style={styles.text}>Speaking to NotiveAI</Text>
+          <Text style={[styles.text, dynamicStyles.text]}>Speaking to NotiveAI</Text>
         </View>
       </View>
 
-      <View style={styles.inputRectangle}>
+      <View style={[styles.inputRectangle, dynamicStyles.inputRectangle]}>
 
       {/* Show Animated Wave When Speaking */}
       {isListening && <Waveform /> }
 
       <View style={styles.bottomContainer}>
-        <TouchableOpacity style={styles.iconButton}>
-          <MaterialCommunityIcons name="close" size={width * 0.07} color="#6F767E" />
+        <TouchableOpacity style={[styles.iconButton, dynamicStyles.iconButton]} onPress={() => navigation.navigate("Navbar")}>
+          <MaterialCommunityIcons name="close" size={width * 0.08} color="#6F767E" />
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.iconButton, styles.microphone]}
+          style={[styles.iconButton, dynamicStyles.iconButton, styles.microphone]}
           onPressIn={() => setIsListening(true)}
           onPressOut={() => setIsListening(false)}
         >
-          <MaterialCommunityIcons name="microphone" size={width * 0.14} color="#6F767E" />
+          <MaterialCommunityIcons name="microphone-outline" size={width * 0.14} color="#6F767E" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.iconButton}>
-          <MaterialCommunityIcons name="cog" size={width * 0.07} color="#6F767E" />
+        <TouchableOpacity style={[styles.iconButton, dynamicStyles.iconButton]} onPress={() => navigation.navigate("AI_Voice")}>
+          <MaterialCommunityIcons name="cog-outline" size={width * 0.08} color="#6F767E" />
         </TouchableOpacity>
       </View>
       </View>
@@ -59,7 +62,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F4F4F4",
     alignItems: "center",
-    paddingTop: height * 0.05,
+    paddingTop: height * 0.02,
   },
   rectangle: {
     flexDirection: "row",
@@ -71,10 +74,7 @@ const styles = StyleSheet.create({
     borderColor: "#EFEFEF",
     borderRadius: 16,
     backgroundColor: "#FCFCFC",
-    marginTop: height * 0.015,
   },
-
-
   leftContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
 
   inputRectangle: {
     width: width * 0.9,
-    height: height * 0.80,
+    height: height * 0.85,
     backgroundColor: "#FCFCFC",
     borderWidth: 1,
     borderColor: "#EFEFEF",
@@ -122,3 +122,26 @@ const styles = StyleSheet.create({
     borderRadius: width * 0.11,
   },
 });
+
+// Dynamic styles for dark mode
+const darkModeStyles = {
+  container: {
+    backgroundColor: "#111315",
+  },
+  rectangle: {
+    backgroundColor: "#1A1D1F",
+    borderColor: "#1A1D1F",
+  },
+  text: {
+    color: "white",
+  },
+  inputRectangle: {
+    backgroundColor: "#1A1D1F",
+    borderColor: "#1A1D1F",
+  },
+
+  iconButton: {
+    borderColor: "#272B30",
+  },
+  
+};

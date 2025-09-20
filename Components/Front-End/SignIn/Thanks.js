@@ -1,34 +1,40 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { scale, verticalScale, moderateScale } from 'react-native-size-matters'; // Responsive scaling functions
-
-const { width, height } = Dimensions.get('window'); // Get the screen width and height
+import { scale, verticalScale, moderateScale } from 'react-native-size-matters';
+import { useDarkMode } from '../Settings/DarkModeContext';
 
 const Thanks = ({ navigation }) => {
-  const handleGoToNotices = () => {
-    // Handle the button click (you can use navigation to redirect to another screen)
-    console.log('Redirecting to notices...');
-    // Example: navigation.navigate('Notices');
-  };
+  const { isDarkMode } = useDarkMode();
+  const dynamicStyles = isDarkMode ? darkModeStyles : styles;
 
   return (
-    <View style={styles.container}>
-      {/* Circle with thick icon */}
+    <View style={[styles.container, dynamicStyles.container]}>
+      {/* Success icon circle */}
       <View style={styles.iconCircle}>
-        <Icon name="check" size={moderateScale(50)} color="black" />
+        <Icon 
+          name="check" 
+          size={moderateScale(50)} 
+          color={isDarkMode ? "white" : "black"} 
+        />
       </View>
 
       {/* Thank you header */}
-      <Text style={styles.header}>Thank you for your purchase!</Text>
-
-      {/* Order received message */}
-      <Text style={styles.message}>
-        Your order has been received and is currently being processed. You will receive an email confirmation with your order details shortly.
+      <Text style={[styles.header, dynamicStyles.header]}>
+        Thank you for your purchase!
       </Text>
 
-      {/* Button to go to notices */}
-      <TouchableOpacity onPress={handleGoToNotices} style={styles.button}>
+      {/* Order confirmation message */}
+      <Text style={[styles.message, dynamicStyles.message]}>
+        Your order has been received and is currently being processed. 
+        You will receive an email confirmation with your order details shortly.
+      </Text>
+
+      {/* Continue button */}
+      <TouchableOpacity 
+        onPress={() => navigation.navigate('Navbar')} 
+        style={[styles.button, dynamicStyles.button]}
+      >
         <Text style={styles.buttonText}>Go to Notive</Text>
       </TouchableOpacity>
     </View>
@@ -38,46 +44,69 @@ const Thanks = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    padding: scale(20), 
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: scale(20),
     backgroundColor: '#FCFCFC',
   },
   iconCircle: {
-    width: moderateScale(80), 
-    height: moderateScale(80),
-    borderRadius: 50,
+    width: moderateScale(120),
+    height: moderateScale(120),
+    borderRadius: moderateScale(60),
     backgroundColor: '#4CAF50',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: verticalScale(20), 
+    marginBottom: verticalScale(30),
   },
   header: {
-    fontSize: moderateScale(30), 
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: '#333',
     marginBottom: verticalScale(20),
-    textAlign: 'center', 
+    textAlign: 'center',
+    lineHeight: verticalScale(32),
+    paddingHorizontal: scale(20),
   },
   message: {
-    fontSize: moderateScale(17), 
+    fontSize: moderateScale(16),
     color: '#6C7275',
-    textAlign: 'center', 
-    marginBottom: verticalScale(30),
-    fontFamily:'Karla'
+    textAlign: 'center',
+    marginBottom: verticalScale(40),
+    lineHeight: verticalScale(24),
+    paddingHorizontal: scale(30),
+    fontFamily: 'Karla'
   },
   button: {
     backgroundColor: '#8246FB',
-    paddingVertical: verticalScale(15), 
+    paddingVertical: verticalScale(15),
     paddingHorizontal: scale(60),
-    borderRadius: moderateScale(50), 
+    borderRadius: moderateScale(50),
+    minWidth: '70%',
     alignItems: 'center',
   },
   buttonText: {
     color: 'white',
-    fontSize: moderateScale(17), 
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
   },
 });
+
+const darkModeStyles = {
+  container: {
+    backgroundColor: "#111315",
+  },
+  header: {
+    color: "white",
+  },
+  message: {
+    color: '#F0F1F1'
+  },
+  button: {
+    backgroundColor: '#6D24FF',
+  },
+  iconCircle: {
+    backgroundColor: '#32AE60',
+  }
+};
 
 export default Thanks;

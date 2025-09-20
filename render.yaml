@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: notive-app-backend
+    env: node
+    plan: free
+    buildCommand: cd Backend && npm install
+    startCommand: cd Backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DB_HOST
+        fromDatabase:
+          name: notive-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: notive-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: notive-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: notive-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: notive-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false
+
+databases:
+  - name: notive-db
+    plan: free
+    databaseName: notive_app
+    user: notive_user

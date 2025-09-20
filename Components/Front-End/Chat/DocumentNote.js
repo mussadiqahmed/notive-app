@@ -11,14 +11,16 @@ import {
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import * as MediaLibrary from "expo-media-library";
 import * as FileSystem from 'expo-file-system';
-import FileViewer from 'react-native-file-viewer'; // Import react-native-file-viewer
+import * as Sharing from 'expo-sharing';
+import { useDarkMode } from "../Settings/DarkModeContext"; // Import the custom hook
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
 const DocumentNote = ({ document, onRemove }) => {
   const [comment, setComment] = useState("");
   const [isCommenting, setIsCommenting] = useState(false);
-
+  const { isDarkMode } = useDarkMode(); // Access dark mode state
+  const dynamicStyles = isDarkMode ? darkModeStyles : styles;
   // Fallback to empty object if document is undefined
   const { name = "No Name", uri = "", mimeType = "application/octet-stream", size = 0 } = document || {}; 
 
@@ -101,29 +103,24 @@ const DocumentNote = ({ document, onRemove }) => {
 
   // Function to open the document using react-native-file-viewer
   const openDocument = async (documentUri) => {
-    try {
-      // Check if the document exists at the given URI
-      const fileInfo = await FileSystem.getInfoAsync(documentUri);
-      
-      if (!fileInfo.exists) {
-        Alert.alert("Error", "The document could not be found.");
-        return;
-      }
-  
-      // Try to open the document with FileViewer
-      FileViewer.open(documentUri)
-        .then(() => {
-          console.log('Document opened successfully');
-        })
-        .catch((err) => {
-          console.error("Error opening file:", err);
-          Alert.alert("Error", "Could not open the document: " + err);
-        });
-    } catch (err) {
-      console.error("Error opening document:", err);
-      Alert.alert("Error", "Could not open the document.");
+  try {
+    const fileInfo = await FileSystem.getInfoAsync(documentUri);
+    
+    if (!fileInfo.exists) {
+      Alert.alert("Error", "The document could not be found.");
+      return;
     }
-  };
+
+    // Use expo-sharing to open the document
+    await Sharing.shareAsync(documentUri, {
+      mimeType: mimeType, // Use the actual mimeType from your document
+      UTI: mimeType // iOS-specific uniform type identifier
+    });
+  } catch (err) {
+    console.error("Error opening document:", err);
+    Alert.alert("Error", "Could not open the document.");
+  }
+};
 
   // Function to get the document type icon based on MIME type or file extension
   const getDocumentIcon = (mimeType) => {
@@ -150,43 +147,49 @@ const DocumentNote = ({ document, onRemove }) => {
             name={getDocumentIcon(mimeType)}
             size={40}
             color="#6F767E"
-            style={styles.documentIcon}
+            style={[styles.documentIcon, dynamicStyles.documentIcon]}
           />
-          <Text style={styles.documentName}>{name}</Text>
+          <Text style={[styles.documentName, dynamicStyles.documentName]}>{name}</Text>
         </TouchableOpacity>
       ) : (
-        <Text style={styles.documentName}>No document selected</Text>
+        <Text style={[styles.documentName, dynamicStyles.documentName]}>No document selected</Text>
       )}
 
       {isCommenting && (
         <TextInput
-          style={styles.commentInput}
+          style={[styles.commentInput, dynamicStyles.commentInput]}
           value={comment}
           multiline
           onChangeText={setComment}
           placeholder="Enter comment..."
+          placeholderTextColor={isDarkMode ? "#6F767E" : "black"}
         />
       )}
 
-      <View style={styles.buttonRow}>
-        <TouchableOpacity onPress={handleDownload} style={styles.button}>
-          <Icon name="arrow-down-circle" size={24} color="#6F767E" />
-          <Text style={styles.buttonText}>Download</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={handleCommentPress} style={styles.button}>
-          <Icon name="forum-outline" size={24} color="#6F767E" />
-          <Text style={styles.buttonText}>{isCommenting ? "Save" : "Comment"}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={onRemove} style={styles.button}>
-          <Icon name="trash-can-outline" size={24} color="#F44336" />
-          <Text style={styles.buttonDelText}>Delete</Text>
-        </TouchableOpacity>
-      </View>
+       {/* Buttons Row */}
+            <View style={[styles.buttonRow, dynamicStyles.buttonRow]}>
+              {/* Download Button */}
+              <TouchableOpacity onPress={handleDownload} style={[styles.button, dynamicStyles.button]}>
+                <Icon name="arrow-down-circle" size={24} color="#6F767E" />
+                <Text style={[styles.buttonText, dynamicStyles.buttonText]}>Download</Text>
+              </TouchableOpacity>
+      
+              {/* Comment Button */}
+              <TouchableOpacity onPress={handleCommentPress} style={[styles.button, dynamicStyles.button]}>
+                <Icon name="forum-outline" size={24} color="#6F767E" />
+                <Text style={[styles.buttonText, dynamicStyles.buttonText]}>{isCommenting ? "Save" : "Comment"}</Text>
+              </TouchableOpacity>
+      
+              {/* Delete Button */}
+              <TouchableOpacity onPress={onRemove} style={[styles.button, dynamicStyles.button]}>
+                <Icon name="trash-can-outline" size={24} color="#F44336" />
+                <Text style={styles.buttonDelText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
     </View>
   );
 };
+export default DocumentNote;
 
 const styles = StyleSheet.create({
   container: {
@@ -197,8 +200,11 @@ const styles = StyleSheet.create({
   },
   documentContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
+    alignSelf:'flex-start',
     marginBottom: width * 0.02,
+    paddingHorizontal: width * 0.05,
+
   },
   documentIcon: {
     marginRight: width * 0.03,
@@ -212,7 +218,9 @@ const styles = StyleSheet.create({
   },
   commentInput: {
     width: "100%",
-    borderWidth: 1,
+    fontSize: width * 0.035,
+    borderWidth: 2,
+    fontWeight: '700',
     borderColor: "#E5E7EB",
     borderRadius: width * 0.02,
     padding: width * 0.02,
@@ -222,19 +230,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    width: "90%",
     marginTop: width * 0.02,
+    borderRadius: width * 0.04,
+    borderWidth:2,
     alignSelf: "center",
+    backgroundColor:'#FCFCFC',
+    borderColor:'#FCFCFC',
+    paddingHorizontal: width * 0.04, // 4% of screen width
+    paddingVertical: height * 0.015, // 1.5% of screen height
   },
   button: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: "#E5E7EB",
     paddingVertical: width * 0.02,
     borderRadius: width * 0.02,
-    marginHorizontal: width * 0.015,
+    marginHorizontal: width * 0.010,
     minWidth: 80,
   },
   buttonText: {
@@ -253,4 +266,25 @@ const styles = StyleSheet.create({
   },
 });
 
-export default DocumentNote;
+const darkModeStyles = StyleSheet.create({
+  buttonRow: {
+    backgroundColor:'#101010',
+    borderColor: '#FFFFFF1A'
+  },
+  button: {
+    borderColor: "#1F2228",
+  },
+  buttonText: {
+    color: "#6F767E",
+  },
+  commentInput: {
+    borderColor: "#FFFFFF1A",
+    color: "#6F767E"
+  },
+  documentName: {
+    color: "white",
+  },
+  documentIcon:{
+    color: 'white'
+  }
+});

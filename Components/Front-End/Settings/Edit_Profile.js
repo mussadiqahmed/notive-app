@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,35 +7,68 @@ import {
   StyleSheet,
   Dimensions,
   ScrollView,
+  Keyboard,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import SettingsDropdown from "./Settings_Dropdown";
-import { useDarkMode } from "./DarkModeContext"; // Import dark mode context
+import { useDarkMode } from "./DarkModeContext";
 
 const { width, height } = Dimensions.get("window");
+
+// Responsive scaling functions
+const scaleWidth = size => (width / 375) * size;
+const scaleHeight = size => (height / 812) * size;
+const scaleFont = (size, factor = 0.5) => size + (scaleWidth(size) - size) * factor;
 
 const Edit_Profile = ({navigation}) => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const { isDarkMode } = useDarkMode(); // Access dark mode state
+  const { isDarkMode } = useDarkMode();
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   const dynamicStyles = isDarkMode ? darkModeStyles : styles;
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   return (
     <View style={[styles.container, dynamicStyles.container]}>
       <ScrollView 
-        contentContainerStyle={styles.scrollView} 
-        keyboardShouldPersistTaps="handled" 
+        contentContainerStyle={styles.scrollView}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         {/* Top Header */}
         <View style={[styles.rectangle, dynamicStyles.rectangle]}>
           <View style={styles.leftContainer}>
-            <TouchableOpacity style={styles.backButton}
-            onPress={() => navigation.navigate("Navbar")}>
-              <Icon name="arrow-left" size={width * 0.07}  color={isDarkMode ? "white" : "black"}/>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => navigation.navigate("Navbar")}
+            >
+              <Icon 
+                name="arrow-left" 
+                size={scaleFont(24)} 
+                color={isDarkMode ? "white" : "black"}
+              />
             </TouchableOpacity>
             <Text style={[styles.text, dynamicStyles.text]}>Settings</Text>
           </View>
@@ -49,7 +82,11 @@ const Edit_Profile = ({navigation}) => {
           {/* First Name */}
           <Text style={[styles.label, dynamicStyles.label]}>First Name</Text>
           <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
-            <Icon name="account" size={22} style={[styles.iconColor, dynamicStyles.iconColor]} />
+            <Icon 
+              name="account" 
+              size={scaleFont(22)} 
+              style={[styles.iconColor, dynamicStyles.iconColor]} 
+            />
             <TextInput
               style={[styles.inputField, dynamicStyles.inputField]}
               placeholder="Enter your first name"
@@ -62,7 +99,11 @@ const Edit_Profile = ({navigation}) => {
           {/* Last Name */}
           <Text style={[styles.label, dynamicStyles.label]}>Last Name</Text>
           <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
-            <Icon name="account" size={22} style={[styles.iconColor, dynamicStyles.iconColor]} />
+            <Icon 
+              name="account" 
+              size={scaleFont(22)} 
+              style={[styles.iconColor, dynamicStyles.iconColor]} 
+            />
             <TextInput
               style={[styles.inputField, dynamicStyles.inputField]}
               placeholder="Enter your last name"
@@ -75,7 +116,11 @@ const Edit_Profile = ({navigation}) => {
           {/* Email */}
           <Text style={[styles.label, dynamicStyles.label]}>Email</Text>
           <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
-            <Icon name="email" size={22} style={[styles.iconColor, dynamicStyles.iconColor]} />
+            <Icon 
+              name="email" 
+              size={scaleFont(22)} 
+              style={[styles.iconColor, dynamicStyles.iconColor]} 
+            />
             <TextInput
               style={[styles.inputField, dynamicStyles.inputField]}
               placeholder="Enter your email"
@@ -90,11 +135,15 @@ const Edit_Profile = ({navigation}) => {
           {/* Phone Number */}
           <Text style={[styles.label, dynamicStyles.label]}>Phone No</Text>
           <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
-            <Icon name="phone" size={22} style={[styles.iconColor, dynamicStyles.iconColor]} />
+            <Icon 
+              name="phone" 
+              size={scaleFont(22)} 
+              style={[styles.iconColor, dynamicStyles.iconColor]} 
+            />
             <TextInput
               style={[styles.inputField, dynamicStyles.inputField]}
               placeholder="Enter your phone number"
-              placeholderTextColor={isDarkMode ? "#A0A0A0" : "# B0B2B5"}
+              placeholderTextColor={isDarkMode ? "#A0A0A0" : "#B0B2B5"}
               keyboardType="phone-pad"
               value={phone}
               onChangeText={setPhone}
@@ -102,15 +151,20 @@ const Edit_Profile = ({navigation}) => {
           </View>
 
           {/* Submit Button */}
-          <TouchableOpacity style={[styles.submitButton, dynamicStyles.submitButton]}>
+          <TouchableOpacity 
+            style={[styles.submitButton, dynamicStyles.submitButton]}
+            onPress={() => Keyboard.dismiss()}
+          >
             <Text style={[styles.submitText, dynamicStyles.submitText]}>Save Changes</Text>
           </TouchableOpacity>
+          
+          {/* Only show bottom padding when keyboard is visible */}
+          {keyboardVisible && <View style={{ height: scaleHeight(170) }} />}
         </View>
       </ScrollView>
     </View>
   );
 };
-
 export default Edit_Profile;
 
 const styles = StyleSheet.create({
@@ -120,57 +174,57 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     alignItems: "center",
-    paddingTop: height * 0.05,
+    paddingTop: scaleHeight(40),
     flexGrow: 1,
   },
   rectangle: {
     flexDirection: "row",
     alignItems: "center",
-    width: width * 0.9,
-    paddingVertical: height * 0.03,
-    paddingLeft: width * 0.03,
+    width: "90%",
+    paddingVertical: scaleHeight(25),
+    paddingLeft: scaleFont(15),
     borderWidth: 1,
     borderColor: "#EFEFEF",
     borderRadius: 16,
     backgroundColor: "#FCFCFC",
-    marginTop: height * 0.015,
+    alignSelf: "center",
   },
-  rectangle_body: {
-    alignItems: "center",
-    width: width * 0.9,
-    paddingVertical: height * 0.03,
-    borderRadius: 16,
-    backgroundColor: "#FCFCFC",
-    marginTop: height * 0.015,
-    height: height * 0.85
-  },
+rectangle_body: {
+  alignItems: "center",
+  width: "90%",
+  paddingVertical: scaleHeight(20),
+  borderRadius: 16,
+  backgroundColor: "#FCFCFC",
+  marginTop: scaleHeight(15),
+  alignSelf: "center",
+},
   leftContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
   text: {
-    fontSize: width * 0.055,
+    fontSize: scaleFont(20),
     fontWeight: "700",
     color: "black",
-    marginLeft: width * 0.03,
+    marginLeft: scaleFont(15),
   },
   label_Pass: {
     alignSelf: "flex-start",
-    marginLeft: width * 0.05,
-    fontSize: width * 0.07,
+    marginLeft: scaleFont(20),
+    fontSize: scaleFont(24),
     fontWeight: "900",
     color: "black",
-    marginBottom: height * 0.01,
-    marginTop: height * 0.01,
+    marginTop: scaleHeight(5),
+    marginBottom: scaleHeight(5),
   },
   label: {
     alignSelf: "flex-start",
-    marginLeft: width * 0.05,
-    fontSize: width * 0.04,
+    marginLeft: scaleFont(20),
+    fontSize: scaleFont(16),
     fontWeight: "700",
     color: "black",
-    marginBottom: height * 0.01,
-    marginTop: height * 0.01,
+    marginBottom: scaleHeight(10),
+    marginTop: scaleHeight(15),
   },
   inputContainer: {
     flexDirection: "row",
@@ -180,33 +234,33 @@ const styles = StyleSheet.create({
     borderColor: "#F3F5F7",
     borderRadius: 15,
     backgroundColor: "#F3F5F7",
-    paddingHorizontal: width * 0.04,
-    height: height * 0.07,
-    marginBottom: height * 0.015,
+    paddingHorizontal: scaleFont(15),
+    height: scaleHeight(50),
+    marginBottom: scaleHeight(15),
   },
   inputField: {
     flex: 1,
-    fontSize: width * 0.035,
+    fontSize: scaleFont(16),
     color: "black",
-    marginLeft: width * 0.02
+    marginLeft: scaleFont(10),
   },
   leftIcon: {
-    marginRight: 10, 
+    marginRight: scaleFont(10), 
   },
   submitButton: {
     width: "90%",
     backgroundColor: "#7C3DFA",
-    paddingVertical: height * 0.020,
+    marginTop: scaleHeight(10),
+    paddingVertical: scaleHeight(15),
     borderRadius: 40,
     alignItems: "center",
-    marginTop: height * 0.02,
   },
   submitText: {
-    fontSize: width * 0.05,
+    fontSize: scaleFont(18),
     fontWeight: "600",
     color: "white",
   },
-  iconColor:{
+  iconColor: {
     color: '#6C727580'
   }
 });
@@ -238,9 +292,13 @@ const darkModeStyles = {
   inputField: {
     color: "#B0B2B5",
   },
- 
   iconColor: {
     color: "#6C727580",
   },
-
+  submitButton: {
+    backgroundColor: "#7C3DFA",
+  },
+  submitText: {
+    color: "white",
+  },
 };

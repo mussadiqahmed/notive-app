@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   TouchableOpacity,
@@ -6,13 +6,20 @@ import {
   Dimensions,
   Text,
   TextInput,
-  Image
+  Image,
+  ScrollView,
+  Keyboard
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import SettingsDropdown from "./Settings_Dropdown";
-import { useDarkMode } from './DarkModeContext'; // Import the custom hook
+import { useDarkMode } from './DarkModeContext';
 
 const { width, height } = Dimensions.get("window");
+
+// Responsive scaling functions
+const scaleWidth = size => (width / 375) * size;
+const scaleHeight = size => (height / 812) * size;
+const scaleFont = (size, factor = 0.5) => size + (scaleWidth(size) - size) * factor;
 
 const Add_Billing = ({navigation}) => {
   const [showForm, setShowForm] = useState(false);
@@ -21,9 +28,31 @@ const Add_Billing = ({navigation}) => {
   const [expiryDate, setExpiryDate] = useState("");
   const [cvv, setCvv] = useState("");
   const [savedCard, setSavedCard] = useState(null);
-  const { isDarkMode } = useDarkMode(); // Access dark mode state
+  const { isDarkMode } = useDarkMode();
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
-const dynamicStyles = isDarkMode ? darkModeStyles : styles;
+  const dynamicStyles = isDarkMode ? darkModeStyles : styles;
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
   const handleConfirm = () => {
     setSavedCard({ name, cardNumber, expiryDate, cvv });
     setShowForm(false);
@@ -31,11 +60,11 @@ const dynamicStyles = isDarkMode ? darkModeStyles : styles;
     setCardNumber("");
     setExpiryDate("");
     setCvv("");
+    Keyboard.dismiss();
   };
 
-  // Handle expiry date formatting (MM/YY)
   const handleExpiryDateChange = (text) => {
-    let formattedText = text.replace(/[^0-9]/g, ""); // Remove non-numeric characters
+    let formattedText = text.replace(/[^0-9]/g, "");
 
     if (formattedText.length > 2) {
       formattedText = `${formattedText.slice(0, 2)}/${formattedText.slice(2, 4)}`;
@@ -46,201 +75,210 @@ const dynamicStyles = isDarkMode ? darkModeStyles : styles;
 
   return (
     <View style={[styles.container, dynamicStyles.container]}>
-      {/* Header */}
-      <View style={[styles.rectangle, dynamicStyles.rectangle]}>
-        <View style={styles.leftContainer}>
-          <TouchableOpacity style={styles.backButton}
-            onPress={() => navigation.navigate("Navbar")}>
-              <Icon name="arrow-left" size={width * 0.07}  color={isDarkMode ? "white" : "black"}/>
-          </TouchableOpacity>
-          <Text style={[styles.text, dynamicStyles.text]}>Settings</Text>
-        </View>
-      </View>
-
-      {/* Settings Dropdown */}
-      <View style={[styles.rectangle_body, dynamicStyles.rectangle_body]}>
-        <SettingsDropdown />
-        <Text style={[styles.label_Pass, dynamicStyles.label_Pass]}>Billing</Text>
-        <Text style={[styles.label, dynamicStyles.label]}>Payment Method</Text>
-
-        {savedCard && (
-  <View style={[styles.cardInfo, dynamicStyles.cardInfo]}>
-    <Text style={[styles.cardText, dynamicStyles.cardText]}>Name: {savedCard.name}</Text>
-    <Text style={[styles.cardText, dynamicStyles.cardText]}>Card Number: **** **** **** {savedCard.cardNumber.slice(-4)}</Text>
-    <Text style={[styles.cardText, dynamicStyles.cardText]}>Expiry Date: {savedCard.expiryDate}</Text>
-
-    {/* Remove Card Button */}
-    <TouchableOpacity style={[styles.removeButton, dynamicStyles.removeButton]} onPress={() => setSavedCard(null)}>
-      <Text style={[styles.removeText, dynamicStyles.removeText]}>Remove</Text>
-    </TouchableOpacity>
-  </View>
-)}
-
-
-        {showForm ? (
-          <View style={styles.formContainer}>
-            {/* Icons Row */}
-            <View style={styles.iconRow}>
-              <Image source={require("../../../assets/paypal.png")} style={styles.icon} />
-              <Image source={require("../../../assets/mastercard.png")} style={styles.icon} />
-              <Image source={require("../../../assets/americanX.png")} style={styles.icon} />
-            </View>
-
-            {/* Name Field */}
-            <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
-              <Icon name="account" size={20} style={[styles.inputIcon, styles.iconColor, dynamicStyles.iconColor]}/>
-              <TextInput
-                style={[styles.input, dynamicStyles.input]}
-                placeholder="Cardholder Name"
-                placeholderTextColor={isDarkMode ? "#A0A0A0" : "#B0B2B5"}
-                value={name}
-                onChangeText={setName}
-              />
-            </View>
-
-            {/* Card Number Field */}
-            <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
-              <Icon name="credit-card-outline" size={20} style={[styles.inputIcon, styles.iconColor, dynamicStyles.iconColor]} />
-              <TextInput
-                style={[styles.input, dynamicStyles.in]}
-                placeholder="Card Number"
-                placeholderTextColor={isDarkMode ? "#A0A0A0" : "#B0B2B5"}
-                keyboardType="numeric"
-                value={cardNumber}
-                onChangeText={setCardNumber}
-              />
-            </View>
-
-            {/* Expiry Date Field */}
-            <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
-              <Icon name="calendar" size={20} style={[styles.inputIcon, styles.iconColor, dynamicStyles.iconColor]} />
-              <TextInput
-                style={[styles.input, dynamicStyles.input]}
-                placeholder="Expiry Date (MM/YY)"
-                placeholderTextColor={isDarkMode ? "#A0A0A0" : "#B0B2B5"}
-                keyboardType="numeric"
-                value={expiryDate}
-                onChangeText={handleExpiryDateChange}
-                maxLength={5}
-              />
-            </View>
-
-            {/* CVV Field */}
-            <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
-              <Icon name="lock-outline" size={20}style={[styles.inputIcon, styles.iconColor, dynamicStyles.iconColor]}/>
-              <TextInput
-                style={[styles.input, dynamicStyles.input]}
-                placeholder="CVV"
-                placeholderTextColor={isDarkMode ? "#A0A0A0" : "#B0B2B5"}
-                keyboardType="numeric"
-                value={cvv}
-                onChangeText={setCvv}
-                maxLength={3}
-              />
-            </View>
-
-            <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
-              <Text style={styles.confirmText}>Confirm</Text>
+      <ScrollView 
+        contentContainerStyle={styles.scrollView}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={[styles.rectangle, dynamicStyles.rectangle]}>
+          <View style={styles.leftContainer}>
+            <TouchableOpacity style={styles.backButton}
+              onPress={() => navigation.navigate("Navbar")}>
+                <Icon name="arrow-left" size={scaleFont(24)} color={isDarkMode ? "white" : "black"}/>
             </TouchableOpacity>
+            <Text style={[styles.text, dynamicStyles.text]}>Settings</Text>
           </View>
-        ) : (
-          <TouchableOpacity style={styles.addButton} onPress={() => setShowForm(true)}>
-            <Text style={styles.addText}>+ Add New Credit Card</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+        </View>
+
+        {/* Settings Dropdown */}
+        <View style={[styles.rectangle_body, dynamicStyles.rectangle_body]}>
+          <SettingsDropdown />
+          <Text style={[styles.label_Pass, dynamicStyles.label_Pass]}>Billing</Text>
+          <Text style={[styles.label, dynamicStyles.label]}>Payment Method</Text>
+
+          {savedCard && (
+            <View style={[styles.cardInfo, dynamicStyles.cardInfo]}>
+              <Text style={[styles.cardText, dynamicStyles.cardText]}>Name: {savedCard.name}</Text>
+              <Text style={[styles.cardText, dynamicStyles.cardText]}>Card Number: **** **** **** {savedCard.cardNumber.slice(-4)}</Text>
+              <Text style={[styles.cardText, dynamicStyles.cardText]}>Expiry Date: {savedCard.expiryDate}</Text>
+
+              {/* Remove Card Button */}
+              <TouchableOpacity style={[styles.removeButton, dynamicStyles.removeButton]} onPress={() => setSavedCard(null)}>
+                <Text style={[styles.removeText, dynamicStyles.removeText]}>Remove</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {showForm ? (
+            <View style={styles.formContainer}>
+              {/* Icons Row */}
+              <View style={styles.iconRow}>
+                <Image source={require("../../../assets/paypal.png")} style={styles.icon} />
+                <Image source={require("../../../assets/mastercard.png")} style={styles.icon} />
+                <Image source={require("../../../assets/americanX.png")} style={styles.icon} />
+              </View>
+
+              {/* Name Field */}
+              <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
+                <Icon name="account" size={scaleFont(20)} style={[styles.inputIcon, styles.iconColor, dynamicStyles.iconColor]}/>
+                <TextInput
+                  style={[styles.input, dynamicStyles.input]}
+                  placeholder="Cardholder Name"
+                  placeholderTextColor={isDarkMode ? "#A0A0A0" : "#B0B2B5"}
+                  value={name}
+                  onChangeText={setName}
+                />
+              </View>
+
+              {/* Card Number Field */}
+              <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
+                <Icon name="credit-card-outline" size={scaleFont(20)} style={[styles.inputIcon, styles.iconColor, dynamicStyles.iconColor]} />
+                <TextInput
+                  style={[styles.input, dynamicStyles.input]}
+                  placeholder="Card Number"
+                  placeholderTextColor={isDarkMode ? "#A0A0A0" : "#B0B2B5"}
+                  keyboardType="numeric"
+                  value={cardNumber}
+                  onChangeText={setCardNumber}
+                />
+              </View>
+
+              {/* Expiry Date Field */}
+              <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
+                <Icon name="calendar" size={scaleFont(20)} style={[styles.inputIcon, styles.iconColor, dynamicStyles.iconColor]} />
+                <TextInput
+                  style={[styles.input, dynamicStyles.input]}
+                  placeholder="Expiry Date (MM/YY)"
+                  placeholderTextColor={isDarkMode ? "#A0A0A0" : "#B0B2B5"}
+                  keyboardType="numeric"
+                  value={expiryDate}
+                  onChangeText={handleExpiryDateChange}
+                  maxLength={5}
+                />
+              </View>
+
+              {/* CVV Field */}
+              <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
+                <Icon name="lock-outline" size={scaleFont(20)} style={[styles.inputIcon, styles.iconColor, dynamicStyles.iconColor]}/>
+                <TextInput
+                  style={[styles.input, dynamicStyles.input]}
+                  placeholder="CVV"
+                  placeholderTextColor={isDarkMode ? "#A0A0A0" : "#B0B2B5"}
+                  keyboardType="numeric"
+                  value={cvv}
+                  onChangeText={setCvv}
+                  maxLength={3}
+                />
+              </View>
+
+              <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
+                <Text style={styles.confirmText}>Confirm</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.addButton} onPress={() => setShowForm(true)}>
+              <Text style={styles.addText}>+ Add New Credit Card</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Only show bottom padding when keyboard is visible */}
+          {keyboardVisible && <View style={{ height: scaleHeight(170) }} />}
+        </View>
+      </ScrollView>
     </View>
   );
 };
 
 export default Add_Billing;
 
-/** ✅ Styles */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F4F4F4",
+  },
+  scrollView: {
     alignItems: "center",
-    paddingTop: height * 0.05,
+    paddingTop: scaleHeight(40),
+    flexGrow: 1,
   },
   rectangle: {
     flexDirection: "row",
     alignItems: "center",
-    width: width * 0.9,
-    paddingVertical: height * 0.03,
-    paddingLeft: width * 0.03,
+    width: "90%",
+    paddingVertical: scaleHeight(25),
+    paddingLeft: scaleFont(15),
     borderWidth: 1,
     borderColor: "#EFEFEF",
     borderRadius: 16,
     backgroundColor: "#FCFCFC",
-    marginTop: height * 0.015,
+    alignSelf: "center",
   },
   leftContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
   text: {
-    fontSize: width * 0.055,
+    fontSize: scaleFont(20),
     fontWeight: "700",
     color: "black",
-    marginLeft: width * 0.03,
+    marginLeft: scaleFont(15),
   },
   rectangle_body: {
     alignItems: "center",
-    width: width * 0.9,
-    paddingVertical: height * 0.03,
+    width: "90%",
+    paddingVertical: scaleHeight(20),
     borderRadius: 16,
+    minHeight: "80%",
     backgroundColor: "#FCFCFC",
-    marginTop: height * 0.015,
-    height: height * 0.83,
+    marginTop: scaleHeight(15),
+    alignSelf: "center",
   },
   label_Pass: {
     alignSelf: "flex-start",
-    marginLeft: width * 0.05,
-    fontSize: width * 0.07,
-    fontWeight: "700",
+    marginLeft: scaleFont(20),
+    fontSize: scaleFont(24),
+    fontWeight: "900",
     color: "black",
-    marginBottom: height * 0.02,
-    marginTop: height * 0.01,
+    marginBottom: scaleHeight(10),
+    marginTop: scaleHeight(5),
   },
   label: {
     alignSelf: "flex-start",
-    marginLeft: width * 0.05,
-    fontSize: width * 0.05,
+    marginLeft: scaleFont(20),
+    fontSize: scaleFont(16),
     fontWeight: "700",
     color: "black",
-    marginBottom: height * 0.02,
-    marginTop: height * 0.01,
+    marginBottom: scaleHeight(10),
+    marginTop: scaleHeight(5),
   },
   addButton: {
-    marginTop: height * 0.02,
-    marginLeft: height * 0.02,
-    alignSelf: "flex-start", // Aligns button to the start (left)
+    marginTop: scaleHeight(10),
+    marginLeft: scaleFont(20),
+    alignSelf: "flex-start",
   },
-  
   addText: {
-    fontSize: width * 0.045,
+    fontSize: scaleFont(16),
     color: "#8246FB",
     fontWeight: "600",
-    fontFamily:"inter tight"
+    fontFamily: "inter tight"
   },
   formContainer: {
     width: "90%",
-    marginTop: height * 0.02,
+    marginTop: scaleHeight(10),
     alignItems: "center",
-   
   },
   iconRow: {
     flexDirection: "row",
     justifyContent: "flex-start",
-    alignSelf: "flex-start", // Align with input fields
-    marginLeft: 10, // Adjusted to match input fields' start position
-    marginBottom: height * 0.02,
+    alignSelf: "flex-start",
+    marginLeft: scaleFont(10),
+    marginBottom: scaleHeight(20),
   },
   icon: {
-    width: width * 0.10,
-    height: height * 0.06,
-    marginRight: width * 0.05,
+    width: scaleWidth(40),
+    height: scaleHeight(40),
+    marginRight: scaleWidth(15),
     resizeMode: "contain",
   },
   inputContainer: {
@@ -249,73 +287,72 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#CCC",
     borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: height * 0.015,
+    paddingHorizontal: scaleFont(10),
+    marginBottom: scaleHeight(10),
     width: "100%",
+    height: scaleHeight(50),
   },
   inputIcon: {
-    marginLeft: 10, // Ensures the icon starts aligned with the input
-    marginRight: 10,
+    marginLeft: scaleFont(10),
+    marginRight: scaleFont(10),
   },
-
   input: {
     flex: 1,
-    padding: 10,
+    padding: scaleFont(10),
+    fontSize: scaleFont(16),
   },
   confirmButton: {
     backgroundColor: "#8246FB",
-    paddingVertical: height * 0.012,
-    paddingHorizontal: width * 0.04,
+    paddingVertical: scaleHeight(12),
+    paddingHorizontal: scaleFont(40),
     borderRadius: 50,
     alignItems: "center",
-    width: "90%"
+    width: "100%",
+    marginTop: scaleHeight(10),
   },
   confirmText: {
     color: "white",
     fontWeight: "600",
     fontFamily: 'inter',
-    fontSize: width * 0.06,
+    fontSize: scaleFont(18),
   },
   cardInfo: {
     alignSelf: "flex-start",
-    marginLeft: width * 0.05,
+    marginLeft: scaleFont(20),
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: "#DFE1E6",
     borderRadius: 15,
     width: "90%",
-    padding: height * 0.015, // Adjust padding to create space inside the border
+    padding: scaleHeight(15),
   },
-  
   cardText: {
-    fontSize: width * 0.040,
+    fontSize: scaleFont(14),
     color: "#666D80",
     fontWeight: "600",
-    marginTop: height * 0.01
+    marginTop: scaleHeight(5)
   },
   removeButton: {
-    marginTop: height * 0.02,
+    marginTop: scaleHeight(10),
     backgroundColor: "#FFFFFF",
-    paddingVertical: height * 0.012,
-    paddingHorizontal: width * 0.04,
+    paddingVertical: scaleHeight(12),
+    paddingHorizontal: scaleFont(40),
     borderRadius: 8,
     alignItems: "center",
     width: "50%",
     borderWidth: 1,
-    borderColor:"#DFE1E6"
+    borderColor: "#DFE1E6"
   },
   removeText: {
     color: "black",
     fontWeight: "600",
     textAlign: "center",
+    fontSize: scaleFont(14),
   },
-  iconColor:{
+  iconColor: {
     color: '#B0B2B5'
   }
-  
 });
-
-
 
 const darkModeStyles = {
   container: {
@@ -325,7 +362,6 @@ const darkModeStyles = {
     borderColor: "#1A1D1F",
     backgroundColor: "#1A1D1F",
   },
-
   text: {
     color: "white",
   },
@@ -351,25 +387,21 @@ const darkModeStyles = {
   confirmText: {
     color: "black",
   },
-  iconColor:{
+  iconColor: {
     color: '#B0B2B5'
   },
-
   cardInfo: {
     borderColor: "#272B30",
     backgroundColor: '#1A1D1F',
-
   },
-  
   cardText: {
     color: "white",
   },
   removeButton: {
     backgroundColor: "#1A1D1F",
-    borderColor:"#24272E"
+    borderColor: "#24272E"
   },
   removeText: {
     color: "white",
   },
-  
 };

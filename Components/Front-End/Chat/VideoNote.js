@@ -7,18 +7,21 @@ import {
   Text,
   TextInput,
   Alert,
+  KeyboardAvoidingView, ScrollView, Platform 
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import * as FileSystem from "expo-file-system";
 import * as MediaLibrary from "expo-media-library"; // For saving to media library
 import { Video } from "expo-av"; // For video playback
+import { useDarkMode } from "../Settings/DarkModeContext"; // Import the custom hook
 
-const { width } = Dimensions.get("window");
+const { width,height } = Dimensions.get("window");
 
 const VideoNote = ({ videoUri, onRemove }) => {
   const [comment, setComment] = useState("");
   const [isCommenting, setIsCommenting] = useState(false); // Track if the comment field should be visible
-
+  const { isDarkMode } = useDarkMode(); // Access dark mode state
+  const dynamicStyles = isDarkMode ? darkModeStyles : styles;
   // Function to handle download
   const handleDownload = async () => {
     try {
@@ -85,37 +88,39 @@ const VideoNote = ({ videoUri, onRemove }) => {
       {/* Comment Input Field, only shown when isCommenting is true */}
       {isCommenting && (
         <TextInput
-          style={styles.commentInput}
+          style={[styles.commentInput, dynamicStyles.commentInput]}
           value={comment}
           multiline
           onChangeText={setComment}
           placeholder="Enter comment..."
+          placeholderTextColor={isDarkMode ? "#6F767E" : "black"}
         />
       )}
 
-      {/* Buttons Row */}
-      <View style={styles.buttonRow}>
-        {/* Download Button */}
-        <TouchableOpacity onPress={handleDownload} style={styles.button}>
-          <Icon name="arrow-down-circle" size={24} color="#6F767E" />
-          <Text style={styles.buttonText}>Download</Text>
-        </TouchableOpacity>
-
-        {/* Comment Button */}
-        <TouchableOpacity onPress={handleCommentPress} style={styles.button}>
-          <Icon name="forum-outline" size={24} color="#6F767E" />
-          <Text style={styles.buttonText}>{isCommenting ? "Save" : "Comment"}</Text>
-        </TouchableOpacity>
-
-        {/* Delete Button */}
-        <TouchableOpacity onPress={onRemove} style={styles.button}>
-          <Icon name="trash-can-outline" size={24} color="#F44336" />
-          <Text style={styles.buttonDelText}>Delete</Text>
-        </TouchableOpacity>
-      </View>
+     {/* Buttons Row */}
+           <View style={[styles.buttonRow, dynamicStyles.buttonRow]}>
+             {/* Download Button */}
+             <TouchableOpacity onPress={handleDownload} style={[styles.button, dynamicStyles.button]}>
+               <Icon name="arrow-down-circle" size={24} color="#6F767E" />
+               <Text style={[styles.buttonText, dynamicStyles.buttonText]}>Download</Text>
+             </TouchableOpacity>
+     
+             {/* Comment Button */}
+             <TouchableOpacity onPress={handleCommentPress} style={[styles.button, dynamicStyles.button]}>
+               <Icon name="forum-outline" size={24} color="#6F767E" />
+               <Text style={[styles.buttonText, dynamicStyles.buttonText]}>{isCommenting ? "Save" : "Comment"}</Text>
+             </TouchableOpacity>
+     
+             {/* Delete Button */}
+             <TouchableOpacity onPress={onRemove} style={[styles.button, dynamicStyles.button]}>
+               <Icon name="trash-can-outline" size={24} color="#F44336" />
+               <Text style={styles.buttonDelText}>Delete</Text>
+             </TouchableOpacity>
+           </View>
     </View>
   );
 };
+export default VideoNote;
 
 const styles = StyleSheet.create({
   container: {
@@ -128,19 +133,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    width: "90%",
     marginTop: width * 0.02,
+    borderRadius: width * 0.04,
+    borderWidth:2,
     alignSelf: "center",
+    backgroundColor:'#FCFCFC',
+    paddingHorizontal: width * 0.04, // 4% of screen width
+    paddingVertical: height * 0.015, // 1.5% of screen height
+    borderColor:'#FCFCFC'
+
   },
   button: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: "#E5E7EB",
     paddingVertical: width * 0.02,
     borderRadius: width * 0.02,
-    marginHorizontal: width * 0.015,
+    marginHorizontal: width * 0.010,
     minWidth: 80,
   },
   buttonText: {
@@ -159,7 +170,9 @@ const styles = StyleSheet.create({
   },
   commentInput: {
     width: "100%",
-    borderWidth: 1,
+    fontSize: width * 0.035,
+    borderWidth: 2,
+    fontWeight: '700',
     borderColor: "#E5E7EB",
     borderRadius: width * 0.02,
     padding: width * 0.02,
@@ -167,4 +180,20 @@ const styles = StyleSheet.create({
   },
 });
 
-export default VideoNote;
+
+const darkModeStyles = StyleSheet.create({
+  buttonRow: {
+    backgroundColor:'#101010',
+    borderColor:"#1F2228"
+  },
+  button: {
+    borderColor: "#1F2228",
+  },
+  buttonText: {
+    color: "#6F767E",
+  },
+  commentInput: {
+    borderColor: "#FFFFFF1A",
+    color: "#6F767E"
+  },
+});

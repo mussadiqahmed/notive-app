@@ -2,9 +2,14 @@ import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { useDarkMode } from '../Settings/DarkModeContext'; // Import the dark mode hook
+import { useDarkMode } from '../Settings/DarkModeContext';
 
 const { width, height } = Dimensions.get("window");
+
+// Responsive scaling functions
+const scaleWidth = size => (width / 375) * size;
+const scaleHeight = size => (height / 812) * size;
+const scaleFont = (size, factor = 0.5) => size + (scaleWidth(size) - size) * factor;
 
 const settingsOptions = [
   { name: "Password", icon: "lock", screen: "Change_Pass" },
@@ -23,26 +28,33 @@ const SettingsDropdown = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const navigation = useNavigation();
   const route = useRoute();
-  const { isDarkMode } = useDarkMode(); // Get dark mode state
+  const { isDarkMode } = useDarkMode();
+
+  // Get the current option based on route name
+  const getCurrentOption = () => {
+    const currentOption = settingsOptions.find(option => option.screen === route.name);
+    return currentOption || settingsOptions[0];
+  };
+
+  // Track the current option
+  const [currentOption, setCurrentOption] = useState(getCurrentOption());
 
   useEffect(() => {
-    if (route.params && route.params.optionName) {
-      const optionIndex = settingsOptions.findIndex(option => option.name === route.params.optionName);
-      if (optionIndex !== -1) {
-        setSelectedIndex(optionIndex);
-      }
+    // Update current option when route changes
+    const option = settingsOptions.find(option => option.screen === route.name);
+    if (option) {
+      setCurrentOption(option);
+      const index = settingsOptions.findIndex(opt => opt.screen === route.name);
+      setSelectedIndex(index);
     }
-  }, [route.params]);
+  }, [route.name]);
 
   const handleOptionSelect = (index, screen, name) => {
     setSelectedIndex(index);
     setDropdownVisible(false);
-    navigation.navigate(screen, { optionName: name });
+    navigation.navigate(screen);
   };
 
-  const validIndex = selectedIndex >= 0 && selectedIndex < settingsOptions.length ? selectedIndex : 0;
-
-  // Dynamic styles based on dark mode state
   const dynamicStyles = isDarkMode ? darkModeStyles : lightModeStyles;
 
   return (
@@ -52,12 +64,20 @@ const SettingsDropdown = () => {
         onPress={() => setDropdownVisible(!dropdownVisible)}
       >
         <View style={styles.selectedOptionContainer}>
-          <Icon name={settingsOptions[validIndex].icon} size={width * 0.06} color={dynamicStyles.iconColor} />
+          <Icon 
+            name={currentOption.icon} 
+            size={scaleFont(20)} 
+            color={dynamicStyles.iconColor} 
+          />
           <Text style={[styles.selectedOptionText, { color: dynamicStyles.textColor }]}>
-            {settingsOptions[validIndex].name}
+            {currentOption.name}
           </Text>
         </View>
-        <Icon name={dropdownVisible ? "chevron-up" : "chevron-down"} size={width * 0.06} color={dynamicStyles.iconColor} />
+        <Icon 
+          name={dropdownVisible ? "chevron-up" : "chevron-down"} 
+          size={scaleFont(20)} 
+          color={dynamicStyles.iconColor} 
+        />
       </TouchableOpacity>
 
       {dropdownVisible && (
@@ -66,11 +86,17 @@ const SettingsDropdown = () => {
             {settingsOptions.map((option, index) => (
               <TouchableOpacity
                 key={index}
-                style={[styles.optionItem, validIndex === index && dynamicStyles.selectedOption]}
+                style={[styles.optionItem, selectedIndex === index && dynamicStyles.selectedOption]}
                 onPress={() => handleOptionSelect(index, option.screen, option.name)}
               >
-                <Icon name={option.icon} size={width * 0.06} color={dynamicStyles.iconColor} />
-                <Text style={[styles.optionText, { color: dynamicStyles.textColor }]}>{option.name}</Text>
+                <Icon 
+                  name={option.icon} 
+                  size={scaleFont(20)} 
+                  color={dynamicStyles.iconColor} 
+                />
+                <Text style={[styles.optionText, { color: dynamicStyles.textColor }]}>
+                  {option.name}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -85,64 +111,59 @@ export default SettingsDropdown;
 const styles = StyleSheet.create({
   dropdownContainer: {
     alignItems: "center",
-    width: width * 0.9,
-    zIndex: 10, // Ensures dropdown stays on top
+    width: "90%",
+    zIndex: 10,
   },
   dropdownButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    width: "90%",
-    paddingVertical: height * 0.015,
-    paddingHorizontal: width * 0.04,
-    borderWidth: 2,
-    borderRadius: 15,
-    marginBottom: height * 0.02,
+    width: "100%",
+    paddingVertical: scaleHeight(15),
+    paddingHorizontal: scaleWidth(15),
+    borderWidth: scaleWidth(2),
+    borderRadius: scaleWidth(15),
+    marginBottom: scaleHeight(10),
   },
   selectedOptionContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
   selectedOptionText: {
-    fontSize: width * 0.05,
+    fontSize: scaleFont(18),
     fontWeight: "700",
-    marginLeft: width * 0.03,
+    marginLeft: scaleWidth(10),
   },
   dropdownMenuContainer: {
     position: "absolute",
-    top: height * 0.08, // Adjust this value to fine-tune positioning
-    left: "5%",
-    width: "90%",
-    zIndex: 100, // Ensures it's above other content
+    top: scaleHeight(60), // Position below the dropdown button
+    width: "100%",       // Match parent width
+    alignSelf: "center", // Center horizontally
+    zIndex: 100,
   },
   dropdownMenu: {
-    borderRadius: 16,
-    borderWidth: 2,
-    paddingVertical: height * 0.01,
+    borderRadius: scaleWidth(16),
+    borderWidth: scaleWidth(2),
+    paddingVertical: scaleHeight(10),
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: scaleHeight(2) },
     shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5, // For Android shadow
+    shadowRadius: scaleWidth(4),
+    elevation: 5,
   },
   optionItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: height * 0.015,
-    paddingHorizontal: width * 0.05,
+    paddingVertical: scaleHeight(15),
+    paddingHorizontal: scaleWidth(15),
   },
   optionText: {
-    fontSize: width * 0.045,
+    fontSize: scaleFont(16),
     fontWeight: "500",
-    marginLeft: width * 0.03,
+    marginLeft: scaleWidth(10),
   },
   selectedOption: {
-    backgroundColor: "#E8ECEF",
-    borderRadius: 10,
-  },
-  arrowButton: {
-    alignItems: "center",
-    paddingVertical: height * 0.01,
+    borderRadius: scaleWidth(10),
   },
 });
 

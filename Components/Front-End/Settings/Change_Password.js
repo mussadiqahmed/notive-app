@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,12 +7,18 @@ import {
   StyleSheet,
   Dimensions,
   ScrollView,
+  Keyboard,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import SettingsDropdown from "./Settings_Dropdown";
-import { useDarkMode } from './DarkModeContext'; // Import the custom hook
+import { useDarkMode } from "./DarkModeContext";
 
 const { width, height } = Dimensions.get("window");
+
+// Responsive scaling functions
+const scaleWidth = size => (width / 375) * size;
+const scaleHeight = size => (height / 812) * size;
+const scaleFont = (size, factor = 0.5) => size + (scaleWidth(size) - size) * factor;
 
 const Change_Password = ({navigation}) => {
   const [oldPassword, setOldPassword] = useState("");
@@ -21,108 +27,157 @@ const Change_Password = ({navigation}) => {
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { isDarkMode } = useDarkMode(); // Access dark mode state
+  const { isDarkMode } = useDarkMode();
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
-const dynamicStyles = isDarkMode ? darkModeStyles : styles;
+  const dynamicStyles = isDarkMode ? darkModeStyles : styles;
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
   return (
-        <View style={[styles.container, dynamicStyles.container]}>
-    
-    <ScrollView contentContainerStyle={styles.scrollView} showsVerticalScrollIndicator={false}>
-      {/* Top Header */}
-      <View style={[styles.rectangle, dynamicStyles.rectangle]}>
-        <View style={styles.leftContainer}>
-          <TouchableOpacity style={styles.backButton}
-           onPress={() => navigation.navigate("Navbar")}>
-            <Icon name="arrow-left" size={width * 0.07} color={isDarkMode ? "white" : "black"} />
-          </TouchableOpacity>
-          <Text style={[styles.text, dynamicStyles.text]}>Settings</Text>
+    <View style={[styles.container, dynamicStyles.container]}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollView}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Top Header */}
+        <View style={[styles.rectangle, dynamicStyles.rectangle]}>
+          <View style={styles.leftContainer}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => navigation.navigate("Navbar")}
+            >
+              <Icon 
+                name="arrow-left" 
+                size={scaleFont(24)} 
+                color={isDarkMode ? "white" : "black"}
+              />
+            </TouchableOpacity>
+            <Text style={[styles.text, dynamicStyles.text]}>Settings</Text>
+          </View>
         </View>
-      </View>
 
-      {/* Dropdown Settings Menu */}
-      <View style={[styles.rectangle_body, dynamicStyles.rectangle_body]}>
-        <SettingsDropdown />
+        {/* Dropdown Settings Menu */}
+        <View style={[styles.rectangle_body, dynamicStyles.rectangle_body]}>
+          <SettingsDropdown />
+          <Text style={[styles.label_Pass, dynamicStyles.label_Pass]}>Change Password</Text>
 
-        {/* Change Password Section */}
-        <Text style={[styles.label_Pass, dynamicStyles.label_Pass]}>Password</Text>
-
-        {/* Old Password */}
-        <Text style={[styles.label, dynamicStyles.label]}>Old Password</Text>
-        <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
-          <Icon name="lock" size={22}  style={[styles.leftIcon, styles.iconColor, dynamicStyles.iconColor]} />
-          <TextInput
-            style={[styles.inputField, dynamicStyles.inputField]}
-            placeholder="Password"
-            placeholderTextColor={isDarkMode ? "#A0A0A0" : "#B0B2B5"}
-            secureTextEntry={!showOldPassword}
-            value={oldPassword}
-            onChangeText={setOldPassword}
-          />
-          <TouchableOpacity onPress={() => setShowOldPassword(!showOldPassword)}>
+          {/* Old Password */}
+          <Text style={[styles.label, dynamicStyles.label]}>Old Password</Text>
+          <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
             <Icon 
-              name={showOldPassword ? "eye-off" : "eye"} 
-              size={22} 
-              style={[styles.leftIcon, styles.iconColor, dynamicStyles.iconColor]}
+              name="lock" 
+              size={scaleFont(22)} 
+              style={[styles.iconColor, dynamicStyles.iconColor]} 
             />
-          </TouchableOpacity>
-        </View>
+            <TextInput
+              style={[styles.inputField, dynamicStyles.inputField]}
+              placeholder="Enter your old password"
+              placeholderTextColor={isDarkMode ? "#A0A0A0" : "gray"}
+              secureTextEntry={!showOldPassword}
+              value={oldPassword}
+              onChangeText={setOldPassword}
+            />
+            <TouchableOpacity onPress={() => setShowOldPassword(!showOldPassword)}>
+              <Icon 
+                name={showOldPassword ? "eye-off" : "eye"} 
+                size={scaleFont(22)} 
+                style={[styles.iconColor, dynamicStyles.iconColor]}
+              />
+            </TouchableOpacity>
+          </View>
 
-        {/* New Password */}
-        <Text style={[styles.label, dynamicStyles.label]}>New Password</Text>
-        <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
-          <Icon name="lock" size={22} style={[styles.leftIcon, styles.iconColor, dynamicStyles.iconColor]} />
-          <TextInput
-            style={[styles.inputField, dynamicStyles.inputField]}
-            placeholder="New Password"
-            placeholderTextColor={isDarkMode ? "#A0A0A0" : "#B0B2B5"}
-            secureTextEntry={!showNewPassword}
-            value={newPassword}
-            onChangeText={setNewPassword}
-          />
-          <TouchableOpacity onPress={() => setShowNewPassword(!showNewPassword)}>
+          {/* New Password */}
+          <Text style={[styles.label, dynamicStyles.label]}>New Password</Text>
+          <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
             <Icon 
-              name={showNewPassword ? "eye-off" : "eye"} 
-              size={22} 
-              style={[styles.leftIcon, styles.iconColor, dynamicStyles.iconColor]}
+              name="lock" 
+              size={scaleFont(22)} 
+              style={[styles.iconColor, dynamicStyles.iconColor]} 
             />
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.passwordRequirement}>Minimum 8 characters</Text>
+            <TextInput
+              style={[styles.inputField, dynamicStyles.inputField]}
+              placeholder="Enter your new password"
+              placeholderTextColor={isDarkMode ? "#A0A0A0" : "gray"}
+              secureTextEntry={!showNewPassword}
+              value={newPassword}
+              onChangeText={setNewPassword}
+            />
+            <TouchableOpacity onPress={() => setShowNewPassword(!showNewPassword)}>
+              <Icon 
+                name={showNewPassword ? "eye-off" : "eye"} 
+                size={scaleFont(22)} 
+                style={[styles.iconColor, dynamicStyles.iconColor]}
+              />
+            </TouchableOpacity>
+          </View>
 
-        {/* Confirm Password */}
-        <Text style={[styles.label, dynamicStyles.label]}>Confirm New Password</Text>
-        <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
-          <Icon name="lock" size={22} style={[styles.leftIcon, styles.iconColor, dynamicStyles.iconColor]} />
-          <TextInput
-            style={[styles.inputField, dynamicStyles.inputField]}
-            placeholder="Confirm new password"
-            placeholderTextColor={isDarkMode ? "#A0A0A0" : "#B0B2B5"}
-            secureTextEntry={!showConfirmPassword}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-          />
-          <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+          {/* Confirm Password */}
+          <Text style={[styles.label, dynamicStyles.label]}>Confirm New Password</Text>
+          <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
             <Icon 
-              name={showConfirmPassword ? "eye-off" : "eye"} 
-              size={22} 
-              style={[styles.leftIcon, styles.iconColor, dynamicStyles.iconColor]}
+              name="lock" 
+              size={scaleFont(22)} 
+              style={[styles.iconColor, dynamicStyles.iconColor]} 
             />
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.passwordRequirement}>Minimum 8 characters</Text>
+            <TextInput
+              style={[styles.inputField, dynamicStyles.inputField]}
+              placeholder="Confirm your new password"
+              placeholderTextColor={isDarkMode ? "#A0A0A0" : "gray"}
+              secureTextEntry={!showConfirmPassword}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
+            <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+              <Icon 
+                name={showConfirmPassword ? "eye-off" : "eye"} 
+                size={scaleFont(22)} 
+                style={[styles.iconColor, dynamicStyles.iconColor]}
+              />
+            </TouchableOpacity>
+          </View>
 
-        {/* Submit Button */}
-        <TouchableOpacity style={styles.submitButton}>
-          <Text style={styles.submitText}>Change Password</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+          {/* Password Requirements */}
+          <Text style={[styles.passwordHint, dynamicStyles.passwordHint]}>
+            Password must be at least 8 characters long
+          </Text>
+
+          {/* Submit Button */}
+          <TouchableOpacity 
+            style={[styles.submitButton, dynamicStyles.submitButton]}
+            onPress={() => Keyboard.dismiss()}
+          >
+            <Text style={[styles.submitText, dynamicStyles.submitText]}>Change Password</Text>
+          </TouchableOpacity>
+          
+          {/* Only show bottom padding when keyboard is visible */}
+          {keyboardVisible && <View style={{ height: scaleHeight(170) }} />}
+        </View>
+      </ScrollView>
     </View>
   );
 };
 
 export default Change_Password;
-
 
 const styles = StyleSheet.create({
   container: {
@@ -131,56 +186,58 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     alignItems: "center",
-    paddingTop: height * 0.05,
+    paddingTop: scaleHeight(40),
+    flexGrow: 1,
   },
   rectangle: {
     flexDirection: "row",
     alignItems: "center",
-    width: width * 0.9,
-    paddingVertical: height * 0.03,
-    paddingLeft: width * 0.03,
+    width: "90%",
+    paddingVertical: scaleHeight(25),
+    paddingLeft: scaleFont(15),
     borderWidth: 1,
     borderColor: "#EFEFEF",
     borderRadius: 16,
     backgroundColor: "#FCFCFC",
-    marginTop: height * 0.015,
+    alignSelf: "center",
   },
   rectangle_body: {
     alignItems: "center",
-    width: width * 0.9,
-    height: height * 0.85,
-    paddingVertical: height * 0.03,
+    width: "90%",
+    paddingVertical: scaleHeight(20),
     borderRadius: 16,
+    minHeight: '80%',
     backgroundColor: "#FCFCFC",
-    marginTop: height * 0.015,
+    marginTop: scaleHeight(15),
+    alignSelf: "center",
   },
   leftContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
   text: {
-    fontSize: width * 0.055,
+    fontSize: scaleFont(20),
     fontWeight: "700",
     color: "black",
-    marginLeft: width * 0.03,
+    marginLeft: scaleFont(15),
   },
   label_Pass: {
     alignSelf: "flex-start",
-    marginLeft: width * 0.05,
-    fontSize: width * 0.07,
+    marginLeft: scaleFont(20),
+    fontSize: scaleFont(24),
     fontWeight: "900",
     color: "black",
-    marginBottom: height * 0.005,
-    marginTop: height * 0.01,
+    marginTop: scaleHeight(5),
+    marginBottom: scaleHeight(5),
   },
   label: {
     alignSelf: "flex-start",
-    marginLeft: width * 0.05,
-    fontSize: width * 0.04,
+    marginLeft: scaleFont(20),
+    fontSize: scaleFont(16),
     fontWeight: "700",
     color: "black",
-    marginBottom: height * 0.01,
-    marginTop: height * 0.02,
+    marginBottom: scaleHeight(10),
+    marginTop: scaleHeight(15),
   },
   inputContainer: {
     flexDirection: "row",
@@ -190,46 +247,40 @@ const styles = StyleSheet.create({
     borderColor: "#F3F5F7",
     borderRadius: 15,
     backgroundColor: "#F3F5F7",
-    paddingHorizontal: width * 0.04,
-    height: height * 0.07,
-    marginBottom: height * 0.015,
+    paddingHorizontal: scaleFont(15),
+    height: scaleHeight(50),
+    marginBottom: scaleHeight(15),
   },
   inputField: {
     flex: 1,
-    fontSize: width * 0.035,
+    fontSize: scaleFont(16),
     color: "black",
+    marginLeft: scaleFont(10),
   },
-  leftIcon: {
-    marginRight: 10,
-  },
-  rightIcon: {
-    marginLeft: 10,
-  },
-  iconColor:{
-color: 'gray'
-  },
-  passwordRequirement: {
+  passwordHint: {
     alignSelf: "flex-start",
-    marginLeft: width * 0.05,
-    fontSize: width * 0.035,
+    marginLeft: scaleFont(20),
+    fontSize: scaleFont(14),
     color: "gray",
-    marginBottom: height * 0.02,
+    marginBottom: scaleHeight(15),
   },
   submitButton: {
     width: "90%",
     backgroundColor: "#7C3DFA",
-    paddingVertical: height * 0.020,
+    marginTop: scaleHeight(10),
+    paddingVertical: scaleHeight(15),
     borderRadius: 40,
     alignItems: "center",
-    marginTop: height * 0.02,
   },
   submitText: {
-    fontSize: width * 0.05,
+    fontSize: scaleFont(18),
     fontWeight: "600",
     color: "white",
   },
+  iconColor: {
+    color: '#6C727580'
+  }
 });
-
 
 const darkModeStyles = {
   container: {
@@ -258,9 +309,16 @@ const darkModeStyles = {
   inputField: {
     color: "#B0B2B5",
   },
- 
+  passwordHint: {
+    color: "#6C7275",
+  },
   iconColor: {
     color: "#6C727580",
   },
-
+  submitButton: {
+    backgroundColor: "#7C3DFA",
+  },
+  submitText: {
+    color: "white",
+  },
 };

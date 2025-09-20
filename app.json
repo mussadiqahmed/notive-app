@@ -1,25 +1,31 @@
 {
   "expo": {
+    "main": "./node_modules/expo/AppEntry", 
     "name": "Notive_App",
     "slug": "Notive_App",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "jsEngine": "hermes", 
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mubashar95.Notive", 
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.mubashar95.Notive_App"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -28,6 +34,13 @@
       "eas": {
         "projectId": "3c2fb354-edc0-418a-ade1-8f5f16ae74ac"
       }
+    },
+    "owner": "mubashar95",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/3c2fb354-edc0-418a-ade1-8f5f16ae74ac"
     }
   }
 }

@@ -14,27 +14,27 @@ import {
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useDarkMode } from '../Settings/DarkModeContext';
-import { login } from '../../../Backend/authStorage'; // Import login function
-import axiosInstance from '../../../Backend/axiosSingleton';
+import axiosInstance from '../../../Backend/axiosSingleton'; // Import your axios instance
+import { register } from '../../../Backend/authStorage';
 import { useAuth } from '../Auth/AuthContext';
-
 const { width, height } = Dimensions.get("window");
 
 const scaleWidth = (size) => (width / 375) * size;
 const scaleHeight = (size) => (height / 812) * size;
 const moderateScale = (size, factor = 0.5) => size + (scaleWidth(size) - size) * factor;
 
-const SignIn = ({ navigation }) => {
+const SignUp = ({ navigation }) => {
   const { isDarkMode } = useDarkMode();
   const { login: authLogin } = useAuth();
   const [formData, setFormData] = useState({
+    name: '',
     email: '',
     password: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const dynamicStyles = isDarkMode ? darkModeStyles : styles;
-  const [showPassword, setShowPassword] = useState(false);
+
   const handleInputChange = (name, value) => {
     setFormData(prev => ({
       ...prev,
@@ -42,95 +42,103 @@ const SignIn = ({ navigation }) => {
     }));
   };
 
-  const handleSignIn = async () => {
-    const { email, password } = formData;
-    
-    // Clear any previous errors
-    setError(null);
-    setLoading(true);
+  const handleSignUp = async () => {
+  const { name, email, password } = formData;
+  
+  // Clear any previous errors
+  setError(null);
+  setLoading(true);
 
-    // Basic validation
-    if (!email.trim()) {
-      setLoading(false);
-      Alert.alert('Validation Error', 'Please enter your email address');
-      return;
-    }
-    
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setLoading(false);
-      Alert.alert('Validation Error', 'Please enter a valid email address');
-      return;
-    }
-    
-    if (!password || password.length < 6) {
-      setLoading(false);
-      Alert.alert('Validation Error', 'Password must be at least 6 characters');
-      return;
-    }
+  // Basic validation
+  if (!name.trim()) {
+    setLoading(false);
+    Alert.alert('Validation Error', 'Please enter your full name');
+    return;
+  }
+  
+  if (!email.trim()) {
+    setLoading(false);
+    Alert.alert('Validation Error', 'Please enter your email address');
+    return;
+  }
+  
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    setLoading(false);
+    Alert.alert('Validation Error', 'Please enter a valid email address');
+    return;
+  }
+  
+  if (!password || password.length < 6) {
+    setLoading(false);
+    Alert.alert('Validation Error', 'Password must be at least 6 characters');
+    return;
+  }
 
-    try {
-      console.log('Attempting login...');
-      const response = await login(email, password);
+  try {
+    console.log('Attempting registration...');
+    const response = await register(name, email, password);
+    
+    if (response.success) {
+      // Update authentication status in AuthContext
+      authLogin(response.user, response.token);
       
-      if (response.success) {
-        // Update authentication status in AuthContext
-        authLogin(response.user, response.token);
-        
-        // Reset navigation stack and navigate to Trial
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Trail' }],
-        });
-        
-        // Optional: Show brief success message
-        Alert.alert(
-          'Login Successful',
-          'You have successfully signed in',
-          [  { text: 'OK' } ],
-          { userInterfaceStyle: isDarkMode ? 'light' : 'light' }
-        );
-      }
-    } catch (error) {
-      console.error('Login Error:', error);
-      
-      // Handle specific error cases
-      let errorMessage = error.message;
-      
-      if (errorMessage.includes('Invalid credentials')) {
-        errorMessage = 'Invalid email or password. Please try again.';
-      } else if (errorMessage.includes('network')) {
-        errorMessage = 'Network error. Please check your connection and try again.';
-      } else if (errorMessage.includes('timeout')) {
-        errorMessage = 'Request timed out. Please try again.';
-      }
-      
-      // Set error state for inline display
-      setError(errorMessage);
-      
-      // Also show as alert with theme-appropriate styling
       Alert.alert(
-        'Login Failed',
-        errorMessage,
+        'Registration Successful',
+        'Your account has been created successfully',
         [
-          { 
-            text: 'OK', 
-            style: 'cancel' 
-          },
           {
-            text: 'Try Again',
-            onPress: () => setLoading(false)
+            text: 'Continue',
+            onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Trail' }] }),
+            style: 'default'
           }
         ],
         {
+          // Style based on dark mode
           userInterfaceStyle: isDarkMode ? 'dark' : 'light'
         }
       );
-    } finally {
-      if (!loading) {
-        setLoading(false);
-      }
     }
-  };
+  } catch (error) {
+    console.error('Signup Error:', error);
+    
+    // Handle specific error cases
+    let errorMessage = error.message;
+    
+    if (errorMessage.includes('Email already registered')) {
+      errorMessage = 'This email is already in use. Please try another email or sign in.';
+    } else if (errorMessage.includes('network')) {
+      errorMessage = 'Network error. Please check your connection and try again.';
+    } else if (errorMessage.includes('timeout')) {
+      errorMessage = 'Request timed out. Please try again.';
+    }
+    
+    // Set error state for inline display
+    setError(errorMessage);
+    
+    // Also show as alert with theme-appropriate styling
+    Alert.alert(
+      'Registration Failed',
+      errorMessage,
+      [
+        { 
+          text: 'OK', 
+          style: 'cancel' 
+        },
+        {
+          text: 'Try Again',
+          onPress: () => setLoading(false)
+        }
+      ],
+      {
+        userInterfaceStyle: isDarkMode ? 'dark' : 'light'
+      }
+    );
+  } finally {
+    if (!loading) {
+      setLoading(false);
+    }
+  }
+};
 
   return (
     <KeyboardAwareScrollView
@@ -150,9 +158,9 @@ const SignIn = ({ navigation }) => {
 
         {/* Header with sign up option */}
         <View style={styles.headerContainer}>
-          <Text style={[styles.signupText, dynamicStyles.text]}>Don't have an account?</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-            <Text style={[styles.signinText, dynamicStyles.text]}>Sign up</Text>
+          <Text style={[styles.signupText, dynamicStyles.text]}>Already have an account?</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
+            <Text style={[styles.SignUpText, dynamicStyles.text]}>Sign In</Text>
           </TouchableOpacity>
         </View>
 
@@ -169,7 +177,7 @@ const SignIn = ({ navigation }) => {
 
         {/* Title and subtitle */}
         <View style={styles.titleContainer}>
-          <Text style={[styles.titleText, dynamicStyles.text]}>Welcome Back</Text>
+          <Text style={[styles.titleText, dynamicStyles.text]}>Create an Account</Text>
           <Text style={[styles.subtitleText, dynamicStyles.text]}>
             Continue with a Google account or Apple account
           </Text>
@@ -209,8 +217,25 @@ const SignIn = ({ navigation }) => {
           <View style={[styles.dividerLine, dynamicStyles.dividerLine]} />
         </View>
 
-        {/* Email and Password Inputs */}
+        {/* Name, Email and Password Inputs */}
         <View style={styles.formContainer}>
+          <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
+            <Icon
+              name="person"
+              size={moderateScale(20)}
+              color={isDarkMode ? "#6C727580" : "#6F767E"}
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={[styles.inputField, dynamicStyles.inputField]}
+              placeholder="Full Name"
+              placeholderTextColor={isDarkMode ? '#6C727580' : '#6F767E'}
+              value={formData.name}
+              onChangeText={(text) => handleInputChange('name', text)}
+              autoCapitalize="words"
+            />
+          </View>
+
           <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
             <Icon
               name="email"
@@ -230,42 +255,31 @@ const SignIn = ({ navigation }) => {
           </View>
 
           <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
-  <Icon
-    name="lock"
-    size={moderateScale(20)}
-    color={isDarkMode ? "#6C727580" : "#6F767E"}
-    style={styles.inputIcon}
-  />
-  <TextInput
-    style={[styles.inputField, dynamicStyles.inputField]}
-    placeholder="Password"
-    placeholderTextColor={isDarkMode ? '#6C727580' : '#6F767E'}
-    secureTextEntry={!showPassword} // Toggle based on state
-    autoCapitalize="none"
-    value={formData.password}
-    onChangeText={(text) => handleInputChange('password', text)}
-  />
-  <TouchableOpacity 
-    onPress={() => setShowPassword(!showPassword)}
-    style={styles.eyeIcon}
-  >
-    <Icon
-      name={showPassword ? "visibility" : "visibility-off"}
-      size={moderateScale(20)}
-      color={isDarkMode ? "#6C727580" : "#6F767E"}
-    />
-  </TouchableOpacity>
-</View>
+            <Icon
+              name="lock"
+              size={moderateScale(20)}
+              color={isDarkMode ? "#6C727580" : "#6F767E"}
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={[styles.inputField, dynamicStyles.inputField]}
+              placeholder="Password (min 6 characters)"
+              placeholderTextColor={isDarkMode ? '#6C727580' : '#6F767E'}
+              secureTextEntry
+              autoCapitalize="none"
+              value={formData.password}
+              onChangeText={(text) => handleInputChange('password', text)}
+            />
+          </View>
         </View>
-
         {/* Submit button */}
         <TouchableOpacity
           style={[styles.submitButton, dynamicStyles.submitButton, loading && styles.disabledButton]}
-          onPress={handleSignIn}
+          onPress={handleSignUp}
           disabled={loading}
         >
           <Text style={[styles.submitButtonText, dynamicStyles.text]}>
-            {loading ? 'Signing In...' : 'Sign In'}
+            {loading ? 'Creating Account...' : 'Sign Up'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -273,7 +287,7 @@ const SignIn = ({ navigation }) => {
   );
 };
 
-export default SignIn;
+export default SignUp;
 
 // Base styles
 const styles = StyleSheet.create({
@@ -297,7 +311,7 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(15),
     fontFamily: 'inter',
   },
-  signinText: {
+  SignUpText: {
     color: 'black',
     fontFamily: 'inter',
     fontWeight: '700',
@@ -307,6 +321,7 @@ const styles = StyleSheet.create({
   logoContainer: {
     marginTop: scaleHeight(90),
     marginBottom: scaleHeight(60),
+    // marginLeft: scaleWidth(35),
   },
   logo: {
     width: scaleWidth(180),
@@ -362,7 +377,7 @@ const styles = StyleSheet.create({
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: scaleHeight(20),
+    marginVertical: scaleHeight(10),
     marginHorizontal: scaleWidth(30),
   },
   dividerLine: {
@@ -379,7 +394,7 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     marginHorizontal: scaleWidth(20),
-    marginBottom: scaleHeight(10),
+    marginBottom: scaleHeight(20),
   },
   inputContainer: {
     flexDirection: 'row',
@@ -388,12 +403,8 @@ const styles = StyleSheet.create({
     paddingVertical: scaleHeight(12),
     paddingHorizontal: scaleWidth(15),
     borderRadius: 15,
-    marginBottom: scaleHeight(15),
+    marginBottom: scaleHeight(10),
   },
-  eyeIcon: {
-  padding: scaleWidth(10),
-  marginLeft: scaleWidth(5),
-},
   inputIcon: {
     marginRight: scaleWidth(10),
   },
@@ -404,23 +415,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#000',
   },
-  forgotPasswordContainer: {
-    alignSelf: 'flex-end',
-    marginRight: scaleWidth(20),
-    marginBottom: scaleHeight(20),
-  },
-  forgotPasswordText: {
-    color: '#6D24FF',
-    fontSize: moderateScale(14),
-    fontFamily: 'inter',
-    fontWeight: '700',
-  },
   submitButton: {
     backgroundColor: '#6D24FF',
     paddingVertical: scaleHeight(15),
     borderRadius: 50,
     marginHorizontal: scaleWidth(20),
-    marginTop: scaleHeight(10),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -433,14 +432,7 @@ const styles = StyleSheet.create({
   disabledButton: {
     opacity: 0.7,
   },
-  errorContainer: {
-    marginHorizontal: scaleWidth(20),
-    marginBottom: scaleHeight(10),
-    padding: scaleHeight(10),
-    backgroundColor: '#FFEBEE',
-    borderRadius: 8,
-  },
- 
+
 });
 
 // Dark mode styles
@@ -470,7 +462,10 @@ const darkModeStyles = StyleSheet.create({
   submitButton: {
     backgroundColor: "#6D24FF",
   },
-  forgotPasswordText: {
-    color: '#9D6CFF',
-  },
+  errorContainer: {
+  backgroundColor: '#422626', // Darker red background
+},
+errorText: {
+  color: '#FF8A80', // Lighter red text
+},
 });

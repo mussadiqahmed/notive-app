@@ -12,9 +12,15 @@ import SettingsDropdown from "./Settings_Dropdown";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { LinearGradient } from "expo-linear-gradient";
 import MaskedView from "@react-native-masked-view/masked-view";
-import { useDarkMode } from "./DarkModeContext"; // Import the custom hook
+import { useDarkMode } from "./DarkModeContext";
 
 const { width, height } = Dimensions.get("window");
+
+// Responsive scaling functions
+const scaleWidth = size => (width / 375) * size;
+const scaleHeight = size => (height / 812) * size;
+const scaleFont = (size, factor = 0.5) => size + (scaleWidth(size) - size) * factor;
+
 const gradientColors = ["#6340FF", "#FF40C6", "#FF8040"];
 const plans = ["Lite", "Standard", "Pro"];
 const planDetails = {
@@ -23,14 +29,14 @@ const planDetails = {
   Pro: { price: "$97/mo", tokens: "Unlimited", storage: "Unlimited" },
 };
 
-const Subscription = ({navigation}) => {
+const Subscription = ({ navigation }) => {
   const [selectedPlan, setSelectedPlan] = useState(null);
-
   const starImage = require("../../../assets/2Star.png");
   const selectedStarImage = require("../../../assets/2GradientStar.png");
-  const { isDarkMode } = useDarkMode(); // Access dark mode state
+  const { isDarkMode } = useDarkMode();
 
   const dynamicStyles = isDarkMode ? darkModeStyles : styles;
+
   const getButtonLabel = (plan) => {
     if (!selectedPlan) return "Subscribe";
 
@@ -45,27 +51,28 @@ const Subscription = ({navigation}) => {
 
   return (
     <View style={[styles.container, dynamicStyles.container]}>
+      {/* Header */}
       <View style={[styles.rectangle, dynamicStyles.rectangle]}>
         <TouchableOpacity style={styles.backButton}
           onPress={() => navigation.navigate("Navbar")}>
           <Icon
             name="arrow-left"
-            size={width * 0.07}
+            size={scaleFont(24)}
             color={isDarkMode ? "white" : "black"}
           />
         </TouchableOpacity>
         <Text style={[styles.text, dynamicStyles.text]}>Settings</Text>
       </View>
 
+      {/* Main Content */}
       <View style={[styles.rectangle_body, dynamicStyles.rectangle_body]}>
         <SettingsDropdown />
         <Text style={[styles.label_Pass, dynamicStyles.label_Pass]}>
           Choose a Subscription Plan
         </Text>
 
-        {/* Scrollable plans section */}
         <ScrollView
-          style={styles.scrollContainer}
+          contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
         >
           {plans.map((plan, index) => {
@@ -77,6 +84,7 @@ const Subscription = ({navigation}) => {
               <TouchableOpacity
                 key={plan}
                 onPress={() => setSelectedPlan(plan)}
+                activeOpacity={0.8}
               >
                 {isSelected ? (
                   <LinearGradient
@@ -93,9 +101,9 @@ const Subscription = ({navigation}) => {
                       <View style={styles.titleContainer}>
                         {plan === "Pro" ? (
                           <MaskedView
-                            style={{ flexDirection: "row" }}
+                            style={{ flexDirection: "row", height: scaleFont(24) }}
                             maskElement={
-                              <Icon name="crown" size={24} color="white" />
+                              <Icon name="crown" size={scaleFont(24)} color="white" />
                             }
                           >
                             <LinearGradient
@@ -103,7 +111,7 @@ const Subscription = ({navigation}) => {
                               start={{ x: 0, y: 0 }}
                               end={{ x: 1, y: 0 }}
                             >
-                              <Text style={{ fontSize: 24, opacity: 0 }}>
+                              <Text style={{ fontSize: scaleFont(24), opacity: 0 }}>
                                 👑
                               </Text>
                             </LinearGradient>
@@ -111,42 +119,45 @@ const Subscription = ({navigation}) => {
                         ) : (
                           <Image
                             source={selectedStarImage}
-                            style={styles.starImage}
+                            style={[styles.starImage, { height: scaleFont(24), width: scaleFont(24) }]}
                           />
                         )}
-                        <Text
-                          style={[
-                            styles.planTitleBlack,
-                            dynamicStyles.planTitleBlack,
-                          ]}
-                        >
-                          {plan}{" "}
-                        </Text>
-                        <MaskedView
-                          style={{ flexDirection: "row" }}
-                          maskElement={
-                            <Text
-                              style={[
-                                styles.planTitleMoney,
-                                { color: "black" },
-                              ]}
-                            >
-                              {planDetails[plan].price}
-                            </Text>
-                          }
-                        >
-                          <LinearGradient
-                            colors={gradientColors}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Text
+                            style={[
+                              styles.planTitleBlack,
+                              dynamicStyles.planTitleBlack,
+                              { lineHeight: scaleFont(24) }
+                            ]}
                           >
-                            <Text
-                              style={[styles.planTitleMoney, { opacity: 0 }]}
+                            {plan}{" "}
+                          </Text>
+                          <MaskedView
+                            style={{ flexDirection: "row", height: scaleFont(24) }}
+                            maskElement={
+                              <Text
+                                style={[
+                                  styles.planTitleMoney,
+                                  { color: "black", lineHeight: scaleFont(24) }
+                                ]}
+                              >
+                                {planDetails[plan].price}
+                              </Text>
+                            }
+                          >
+                            <LinearGradient
+                              colors={gradientColors}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 1, y: 0 }}
                             >
-                              {planDetails[plan].price}
-                            </Text>
-                          </LinearGradient>
-                        </MaskedView>
+                              <Text
+                                style={[styles.planTitleMoney, { opacity: 0, lineHeight: scaleFont(24) }]}
+                              >
+                                {planDetails[plan].price}
+                              </Text>
+                            </LinearGradient>
+                          </MaskedView>
+                        </View>
                       </View>
                       <Text
                         style={[styles.planDetails, dynamicStyles.planDetails]}
@@ -184,30 +195,30 @@ const Subscription = ({navigation}) => {
                     </View>
                   </LinearGradient>
                 ) : (
-                  <View style={[styles.planContainer, styles.borderStyle]}>
+                  <View style={[styles.planContainer, styles.borderStyle, dynamicStyles.borderStyle]}>
                     <View style={styles.titleContainer}>
                       {plan === "Pro" ? (
-                        <Icon name="crown" size={24} color="#6F767E" />
+                        <Icon name="crown" size={scaleFont(24)} color="#6F767E" />
                       ) : (
                         <Image source={starImage} style={styles.starImage} />
                       )}
-                      <Text style={styles.planTitleBlack}>{plan} </Text>
-                      <Text style={styles.planTitleMoney}>
+                      <Text style={[styles.planTitleBlack, dynamicStyles.planTitleBlack]}>{plan} </Text>
+                      <Text style={[styles.planTitleMoney, dynamicStyles.planTitleMoney]}>
                         {planDetails[plan].price}
                       </Text>
                     </View>
-                    <Text style={styles.planDetails}>
+                    <Text style={[styles.planDetails, dynamicStyles.planDetails]}>
                       Tokens:{" "}
-                      <Text style={styles.planTitleBlack}>
+                      <Text style={[styles.planTitleBlack, dynamicStyles.planTitleBlack]}>
                         {planDetails[plan].tokens}
                       </Text>
                       {plan === "Pro"
                         ? " (Unlimited AI talk time)"
                         : " (~3 hours of AI talk time)"}
                     </Text>
-                    <Text style={styles.planDetails}>
+                    <Text style={[styles.planDetails, dynamicStyles.planDetails]}>
                       Storage:{" "}
-                      <Text style={styles.planTitleBlack}>
+                      <Text style={[styles.planTitleBlack, dynamicStyles.planTitleBlack]}>
                         {planDetails[plan].storage}
                       </Text>
                     </Text>
@@ -235,89 +246,112 @@ const Subscription = ({navigation}) => {
 
 export default Subscription;
 
-/** ✅ Styles */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F4F4F4",
     alignItems: "center",
-    paddingTop: height * 0.05,
+    paddingTop: scaleHeight(40),
   },
   rectangle: {
     flexDirection: "row",
     alignItems: "center",
-    width: width * 0.9,
-    paddingVertical: height * 0.03,
-    paddingLeft: width * 0.03,
+    width: "90%",
+    paddingVertical: scaleHeight(25),
+    paddingLeft: scaleFont(15),
     borderWidth: 1,
     borderColor: "#EFEFEF",
     borderRadius: 16,
     backgroundColor: "#FCFCFC",
-    marginTop: height * 0.015,
+    alignSelf: "center",
   },
   text: {
-    fontSize: width * 0.055,
+    fontSize: scaleFont(20),
     fontWeight: "700",
     color: "black",
-    marginLeft: width * 0.03,
+    marginLeft: scaleFont(15),
   },
   rectangle_body: {
-    flex: 1,
-    width: width * 0.9,
-    paddingVertical: height * 0.03,
+    width: "90%",
+    paddingVertical: scaleHeight(20),
     borderRadius: 16,
     backgroundColor: "#FCFCFC",
-    marginTop: height * 0.015,
+    marginTop: scaleHeight(15),
+    alignSelf: "center",
+    alignItems: 'center',
+    maxHeight: "85%",
+    flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
     width: "100%",
+    paddingBottom: scaleHeight(10),
+    paddingHorizontal: scaleWidth(15),
   },
   label_Pass: {
     alignSelf: "flex-start",
-    marginLeft: width * 0.05,
-    fontSize: width * 0.05,
+    marginLeft: scaleFont(20),
+    fontSize: scaleFont(20),
     fontWeight: "700",
     color: "black",
-    marginBottom: height * 0.02,
+    marginBottom: scaleHeight(10),
   },
   borderStyle: {
     borderWidth: 2,
     borderColor: "#EFEFEF",
     borderRadius: 15,
-    padding: width * 0.05,
-    marginBottom: height * 0.02,
-    width: width * 0.8,
+    padding: scaleWidth(15),
+    marginBottom: scaleHeight(10),
+    width: "100%",
     backgroundColor: "#FFF",
     alignSelf: "center",
   },
   gradientBorder: {
     borderRadius: 15,
-    padding: 2,
-    width: width * 0.81,
+    padding: scaleWidth(2),
+    width: "100%",
     alignSelf: "center",
-    marginBottom: height * 0.02,
+    marginBottom: scaleHeight(10),
   },
   innerContainer: {
     backgroundColor: "#FFF",
-    padding: width * 0.05,
+    padding: scaleWidth(15),
     borderRadius: 15,
-    width: width * 0.8,
+    width: "100%",
   },
-  planContainer: { alignItems: "flex-start" },
-  titleContainer: { flexDirection: "row", alignItems: "center" },
-  starImage: { width: 24, height: 24, marginRight: width * 0.03 },
+  planContainer: {
+    alignItems: "flex-start",
+    width: "100%",
+  },
+  titleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  starImage: {
+    width: scaleWidth(24),
+    height: scaleWidth(24),
+    marginRight: scaleWidth(10),
+  },
   planTitleBlack: {
-    fontSize: width * 0.04,
+    fontSize: scaleFont(15),
     fontWeight: "700",
     color: "black",
   },
-  planTitleMoney: { fontSize: width * 0.04, fontWeight: "700" },
+  planTitleMoney: {
+    fontSize: scaleFont(16),
+    fontWeight: "700",
+    color: "black",
+  },
+  planDetails: {
+    fontSize: scaleFont(14),
+    color: "#6F767E",
+    marginBottom: scaleHeight(5),
+  },
   subscribeButton: {
     backgroundColor: "#A895FE",
-    paddingVertical: 10,
+    paddingVertical: scaleHeight(10),
     borderRadius: 50,
-    marginTop: 10,
+    marginTop: scaleHeight(10),
     width: "90%",
     alignItems: "center",
     alignSelf: "center",
@@ -326,9 +360,9 @@ const styles = StyleSheet.create({
   },
   downgradeButton: {
     backgroundColor: "#FCFCFC",
-    paddingVertical: 10,
+    paddingVertical: scaleHeight(10),
     borderRadius: 50,
-    marginTop: 10,
+    marginTop: scaleHeight(10),
     width: "90%",
     alignItems: "center",
     alignSelf: "center",
@@ -337,15 +371,23 @@ const styles = StyleSheet.create({
   },
   subscribedButton: {
     backgroundColor: "#E6E5E5",
-    paddingVertical: 10,
+    paddingVertical: scaleHeight(10),
     borderRadius: 50,
-    marginTop: 10,
+    marginTop: scaleHeight(10),
     width: "90%",
     alignItems: "center",
     alignSelf: "center",
   },
-  buttonText: { color: "black", fontWeight: "700", fontSize: 16 },
-  subscribedText: { color: "#737E86", fontWeight: "700", fontSize: 16 },
+  buttonText: {
+    color: "black",
+    fontWeight: "700",
+    fontSize: scaleFont(16)
+  },
+  subscribedText: {
+    color: "#737E86",
+    fontWeight: "700",
+    fontSize: scaleFont(16)
+  },
 });
 
 const darkModeStyles = {
@@ -356,7 +398,6 @@ const darkModeStyles = {
     borderColor: "#1A1D1F",
     backgroundColor: "#1A1D1F",
   },
-
   text: {
     color: "white",
   },
@@ -366,17 +407,30 @@ const darkModeStyles = {
   label_Pass: {
     color: "white",
   },
-  label: {
-    color: "white",
-  },
-
   innerContainer: {
-    backgroundColor: "#101010",
+    backgroundColor: "#1A1D1F",
+  },
+  borderStyle: {
+    backgroundColor: "#1A1D1F",
+    borderColor: "#272B30",
   },
   planDetails: {
     color: "#6F767EC4",
   },
   planTitleBlack: {
     color: "white",
+  },
+  planTitleMoney: {
+    color: "white",
+  },
+  buttonText: {
+    color: "white",
+  },
+  subscribedText: {
+    color: "#6F767E",
+  },
+  downgradeButton: {
+    backgroundColor: "#1A1D1F",
+    borderColor: "#272B30",
   },
 };

@@ -13,10 +13,15 @@ import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityI
 import Feather from "react-native-vector-icons/Feather";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import Toast from "react-native-toast-message";
-import { useDarkMode } from '../Settings/DarkModeContext'; // Import the custom hook
-
+import { useDarkMode } from '../Settings/DarkModeContext';
+import { useFolders } from './FoldersContext';
 
 const { width, height } = Dimensions.get("window");
+
+// Calculate responsive sizes based on screen dimensions
+const scale = size => (width / 375) * size;
+const verticalScale = size => (height / 812) * size;
+const moderateScale = (size, factor = 0.5) => size + (scale(size) - size) * factor;
 
 // Icon categories with libraries
 const folderIcons = [
@@ -40,8 +45,9 @@ const folderIcons = [
 /** Icon Picker Component */
 const IconPicker = ({ selectedIcon, onSelect }) => {
   const [modalVisible, setModalVisible] = useState(false);
- const { isDarkMode } = useDarkMode(); // Access dark mode state
+  const { isDarkMode } = useDarkMode();
   const dynamicStyles = isDarkMode ? darkModeStyles : styles;
+    
   return (
     <>
       <View style={styles.inputGroup}>
@@ -51,7 +57,11 @@ const IconPicker = ({ selectedIcon, onSelect }) => {
           onPress={() => setModalVisible(true)}
         >
           {selectedIcon.library && (
-            <selectedIcon.library name={selectedIcon.name} size={width * 0.07} color={isDarkMode ? "white" : "black"} />
+            <selectedIcon.library 
+              name={selectedIcon.name} 
+              size={moderateScale(24)} 
+              color={isDarkMode ? "white" : "black"} 
+            />
           )}
           <TextInput
             style={[styles.iconText, dynamicStyles.iconText]}
@@ -71,7 +81,10 @@ const IconPicker = ({ selectedIcon, onSelect }) => {
         <View style={[styles.modalOverlay, dynamicStyles.modalOverlay]}>
           <View style={[styles.modalContent, dynamicStyles.modalContent]}>
             <Text style={[styles.modalTitle, dynamicStyles.modalTitle]}>Select Folder Icon</Text>
-            <ScrollView contentContainerStyle={styles.iconGrid}>
+            <ScrollView 
+              contentContainerStyle={styles.iconGrid}
+              showsVerticalScrollIndicator={false}
+            >
               {folderIcons.map((icon, index) => (
                 <TouchableOpacity
                   key={index}
@@ -81,12 +94,19 @@ const IconPicker = ({ selectedIcon, onSelect }) => {
                     setModalVisible(false);
                   }}
                 >
-                  <icon.library name={icon.name} size={width * 0.08} color={isDarkMode ? "white" : "black"} />
+                  <icon.library 
+                    name={icon.name} 
+                    size={moderateScale(26)} 
+                    color={isDarkMode ? "white" : "black"} 
+                  />
                   <Text style={[styles.iconLabel, dynamicStyles.iconLabel]}>{icon.name}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
-            <TouchableOpacity style={[styles.closeButton, dynamicStyles.closeButton]} onPress={() => setModalVisible(false)}>
+            <TouchableOpacity 
+              style={[styles.closeButton, dynamicStyles.closeButton]} 
+              onPress={() => setModalVisible(false)}
+            >
               <Text style={[styles.closeButtonText, dynamicStyles.closeButtonText]}>Close</Text>
             </TouchableOpacity>
           </View>
@@ -96,11 +116,13 @@ const IconPicker = ({ selectedIcon, onSelect }) => {
   );
 };
 
-const Add_Folder = ({navigation}) => {
+const Add_Folder = ({ navigation, route }) => {  // Added route to props
   const [folderName, setFolderName] = useState("");
   const [selectedIcon, setSelectedIcon] = useState(folderIcons[0]);
-  const { isDarkMode } = useDarkMode(); // Access dark mode state
+  const { isDarkMode } = useDarkMode();
   const dynamicStyles = isDarkMode ? darkModeStyles : styles;
+  const { parentId } = route.params || {};
+  const { addFolder } = useFolders();
 
   const handleSave = () => {
     if (!folderName.trim()) {
@@ -108,17 +130,28 @@ const Add_Folder = ({navigation}) => {
         type: "error",
         text1: "Folder Name Required",
         text2: "Please Enter a Folder Name Before Saving.",
-        topOffset: height * 0.065,
+        topOffset: verticalScale(40),
       });
       return;
     }
+    
+    addFolder({ 
+      folderName, 
+      selectedIcon: {
+        name: selectedIcon.name,
+        library: selectedIcon.library
+      } 
+    }, parentId);
+    
     Toast.show({
       type: "success",
       text1: "Folder Created",
       text2: `Folder "${folderName}" Added Successfully!`,
-      topOffset: height * 0.065,
+      topOffset: verticalScale(40),
     });
+    
     setFolderName("");
+    navigation.goBack();
   };
 
   const handleCancel = () => {
@@ -127,21 +160,24 @@ const Add_Folder = ({navigation}) => {
       type: "info",
       text1: "Action Cancelled",
       text2: "Folder creation was cancelled.",
-      topOffset: height * 0.065,
+      topOffset: verticalScale(40),
     });
   };
   
-
   return (
-    
     <View style={[styles.container, dynamicStyles.container]}>
       {/* Header */}
       <View style={[styles.rectangle, dynamicStyles.rectangle]}>
         <View style={styles.leftContainer}>
-          <TouchableOpacity style={styles.backButton}
-          onPress={() => navigation.navigate("Navbar")}
->
-            <MaterialCommunityIcons name="arrow-left" size={width * 0.065} color={isDarkMode ? "white" : "black"} />
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.navigate("Navbar")}
+          >
+            <MaterialCommunityIcons 
+              name="arrow-left" 
+              size={moderateScale(24)} 
+              color={isDarkMode ? "white" : "black"} 
+            />
           </TouchableOpacity>
           <Text style={[styles.text, dynamicStyles.text]}>Add Folder</Text>
         </View>
@@ -161,17 +197,18 @@ const Add_Folder = ({navigation}) => {
         </View>
         <IconPicker selectedIcon={selectedIcon} onSelect={setSelectedIcon} />
 
-        <View style={[styles.buttonContainer]}>
-        <TouchableOpacity style={[styles.cancelButton, dynamicStyles.cancelButton]} onPress={handleCancel}>
-          <Text style={[styles.CancelbuttonText, dynamicStyles.CancelbuttonText]}>Cancel</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.SavebuttonText}>Save Folder</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity 
+            style={[styles.cancelButton, dynamicStyles.cancelButton]} 
+            onPress={handleCancel}
+          >
+            <Text style={[styles.CancelbuttonText, dynamicStyles.CancelbuttonText]}>Cancel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+            <Text style={styles.SavebuttonText}>Save Folder</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-
-      </View>
-
       
       {/* Toast Notification Component */}
       <Toast />
@@ -181,133 +218,115 @@ const Add_Folder = ({navigation}) => {
 
 export default Add_Folder;
 
-/** ✅ Styles */
+/** ✅ Responsive Styles */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F4F4F4",
-    alignItems: "center",
-    paddingTop: height * 0.05,
+    paddingTop: verticalScale(40),
   },
-
   rectangle: {
     flexDirection: "row",
     alignItems: "center",
-    width: width * 0.9,
-    paddingVertical: height * 0.03,
-    paddingLeft: width * 0.03,
+    width: "90%",
+    alignSelf: "center",
+    paddingVertical: verticalScale(25),
+    paddingLeft: moderateScale(10),
     borderWidth: 1,
     borderColor: "#EFEFEF",
     borderRadius: 16,
     backgroundColor: "#FCFCFC",
-    marginTop: height * 0.015,
   },
- 
   leftContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
-
   text: {
-    fontSize: width * 0.05,
+    fontSize: moderateScale(18),
     fontWeight: "700",
     color: "black",
-    paddingLeft: width*0.03,
+    marginLeft: moderateScale(10),
   },
-
   inputRectangle: {
-    width: width * 0.9,
-    height: height * 0.83,
+    width: "90%",
+    flex: 1,
+    alignSelf: "center",
     backgroundColor: "#FCFCFC",
     borderWidth: 1,
     borderColor: "#EFEFEF",
     borderRadius: 16,
-    paddingVertical: height * 0.03,
-    paddingHorizontal: width * 0.05,
-    marginTop: height * 0.02,
+    paddingVertical: verticalScale(15),
+    paddingHorizontal: moderateScale(15),
+    marginTop: verticalScale(15),
+    marginBottom: verticalScale(10),
   },
-  input: {
-    width: "100%",
-    height: height * 0.06,
-    borderWidth: 1,
-    borderColor: "#DDD",
-    borderRadius: 8,
-    paddingHorizontal: width * 0.04,
-    fontSize: width * 0.04,
-    color: "#333",
-    backgroundColor: "#FFF",
-  },
-
-  buttonContainer: {
-    flexDirection: "row",
-  justifyContent: "space-around",  // Reduces space between buttons
-  width: width * 0.8,  // Reduce the width to bring buttons closer
-  marginTop: height * 0.03,
-  },
-
-  cancelButton: {
-    width: width * 0.3,  
-    borderColor: "#E8ECEF",
-    paddingVertical: height * 0.02,
-    borderRadius: 50,
-    borderWidth:2,
-    alignItems: "center",
-    
-  },
-  saveButton: {
-    width: width * 0.40, 
-    backgroundColor: "#8246FB",
-    paddingVertical: height * 0.02,
-    borderRadius: 50,
-    alignItems: "center",
-  },
-  CancelbuttonText: {
-    color: "black",
-    fontSize: width * 0.040,
-    fontWeight: "800",
-    fontFamily:'inter'
-  },
-  SavebuttonText: {
-    color: "#FFF",
-    fontSize: width * 0.045,
-    fontWeight: "800",
-    fontFamily:'inter'
-  },
-
   inputGroup: {
-    marginBottom: height * 0.02,
+    marginBottom: verticalScale(15),
   },
   label: {
-    fontSize: width * 0.04,
+    fontSize: moderateScale(16),
     fontWeight: "600",
     color: "#333",
-    marginBottom: height * 0.008,
+    marginBottom: verticalScale(5),
   },
   input: {
     width: "100%",
-    height: height * 0.075,
+    height: verticalScale(55),
     borderWidth: 1,
     borderColor: "#DDD",
     borderRadius: 8,
-    paddingHorizontal: width * 0.04,
-    fontSize: width * 0.04,
+    paddingHorizontal: moderateScale(12),
+    fontSize: moderateScale(15),
     color: "#333",
     backgroundColor: "#FFF",
   },
   iconSelector: {
     flexDirection: "row",
     alignItems: "center",
-    padding: height * 0.010,
+    padding: moderateScale(10),
     borderWidth: 1,
     borderColor: "#DDD",
     borderRadius: 8,
     backgroundColor: "#FFF",
   },
   iconText: {
-    marginLeft: width * 0.03,
-    fontSize: width * 0.045,
+    marginLeft: moderateScale(10),
+    fontSize: moderateScale(16),
     color: "#333",
     flex: 1,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "85%",
+    marginTop: verticalScale(20),
+  },
+  cancelButton: {
+    width: "45%",
+    borderColor: "#E8ECEF",
+    paddingVertical: verticalScale(12),
+    borderRadius: 50,
+    borderWidth: 2,
+    alignItems: "center",
+  },
+  saveButton: {
+    width: "45%",
+    backgroundColor: "#8246FB",
+    paddingVertical: verticalScale(12),
+    borderRadius: 50,
+    alignItems: "center",
+  },
+  CancelbuttonText: {
+    color: "black",
+    fontSize: moderateScale(15),
+    fontWeight: "800",
+    fontFamily: 'inter'
+  },
+  SavebuttonText: {
+    color: "#FFF",
+    fontSize: moderateScale(15),
+    fontWeight: "800",
+    fontFamily: 'inter'
   },
   modalOverlay: {
     flex: 1,
@@ -316,19 +335,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContent: {
-    width: width * 0.85,
-    height: height * 0.9,  // Make modal cover 80% of screen height
-
+    width: "85%",
+    maxHeight: "80%",
     backgroundColor: "#FFF",
-    padding: width * 0.05,
+    padding: moderateScale(15),
     borderRadius: 12,
     alignItems: "center",
   },
   modalTitle: {
-    fontSize: width * 0.05,
+    fontSize: moderateScale(18),
     fontWeight: "700",
     color: "#333",
-    marginBottom: height * 0.02,
+    marginBottom: verticalScale(15),
   },
   iconGrid: {
     flexDirection: "row",
@@ -336,35 +354,34 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   iconItem: {
-    width: width * 0.22,
-    height: width * 0.22,
+    width: moderateScale(80),
+    height: moderateScale(80),
     justifyContent: "center",
     alignItems: "center",
-    margin: width * 0.02,
+    margin: moderateScale(5),
     borderRadius: 8,
     backgroundColor: "#F4F4F4",
   },
   iconLabel: {
-    fontSize: width * 0.03,
+    fontSize: moderateScale(12),
     color: "#333",
     marginTop: 5,
     textAlign: "center",
   },
   closeButton: {
-    marginTop: height * 0.02,
-    paddingVertical: height * 0.015,
-    paddingHorizontal: width * 0.1,
+    marginTop: verticalScale(15),
+    paddingVertical: verticalScale(10),
+    paddingHorizontal: moderateScale(30),
     borderRadius: 8,
     backgroundColor: "#333",
-    borderWidth:2
+    borderWidth: 2
   },
   closeButtonText: {
     color: "#FFF",
-    fontSize: width * 0.04,
+    fontSize: moderateScale(15),
     fontWeight: "600",
   },
 });
-
 
 const darkModeStyles = {
   container: {
@@ -381,27 +398,20 @@ const darkModeStyles = {
   text: {
     color: "white",
   },
-
   label: {
     color: "white",
   },
- 
   input: {
     borderColor: "#272B30",
     color: "#5D6267",
     backgroundColor: "#1A1D1F",
   },
-
   cancelButton: {
     borderColor: "#272B30",
-      
   },
-
   CancelbuttonText: {
     color: "white",
   },
-
-
   iconSelector: {
     borderColor: "#272B30",
     backgroundColor: "#1A1D1F",
@@ -413,7 +423,7 @@ const darkModeStyles = {
     backgroundColor: "#111315",
   },
   modalContent: {
-       backgroundColor: "#1A1D1F",
+    backgroundColor: "#1A1D1F",
   },
   modalTitle: {
     color: "white",

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   TouchableOpacity,
@@ -11,119 +11,211 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Keyboard,
-  TouchableWithoutFeedback,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { useDarkMode } from "../Settings/DarkModeContext";
+import conversationsApi from "../../../Backend/conversationsApi";
+
 const { width, height } = Dimensions.get("window");
 
-const Chatbot = () => {
+const Chatbot = ({navigation, route}) => {
   const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [conversationId, setConversationId] = useState(null);
+  const { isDarkMode } = useDarkMode();
+  const dynamicStyles = isDarkMode ? darkModeStyles : styles;
+  const scrollViewRef = React.useRef(null);
+  
+  const folderId = route?.params?.folderId;
 
-  const handleSendMessage = () => {
-    if (message.trim()) {
-      console.log("User Message:", message);
-      setMessage("");
+  // Load conversation when component mounts
+  useEffect(() => {
+    loadConversation();
+  }, []);
+
+  const loadConversation = async () => {
+    try {
+      const existingConversationId = route?.params?.conversationId;
+      
+      if (existingConversationId) {
+        // Load existing conversation
+        setConversationId(existingConversationId);
+        const messagesResponse = await conversationsApi.getMessages(existingConversationId);
+        setMessages(messagesResponse.messages || []);
+      } else {
+        // Get or create a conversation for this folder
+        const response = await conversationsApi.getConversations(folderId);
+        let conv = response.conversations?.[0];
+        
+        if (!conv) {
+          // Create a new conversation
+          const newConv = await conversationsApi.createConversation(
+            folderId ? `Chat in ${route?.params?.folderName || 'Folder'}` : 'General Chat',
+            folderId
+          );
+          conv = newConv.conversation;
+        }
+        
+        setConversationId(conv.id);
+        
+        // Load messages for this conversation
+        const messagesResponse = await conversationsApi.getMessages(conv.id);
+        setMessages(messagesResponse.messages || []);
+      }
+    } catch (error) {
+      console.error('Error loading conversation:', error);
+      Alert.alert('Error', 'Failed to load conversation');
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!message.trim() || !conversationId || isLoading) return;
+    
+    const userMessage = message.trim();
+    setMessage("");
+    setIsLoading(true);
+    
+    try {
+      const response = await conversationsApi.sendMessage(conversationId, userMessage);
+      setMessages(prev => [...prev, ...response.messages]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      Alert.alert('Error', 'Failed to send message');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <KeyboardAvoidingView
-    style={styles.container}
-    behavior={Platform.OS === "ios" ? "padding" : "height"}
+    style={[styles.container, dynamicStyles.container]}
+    behavior={Platform.OS === "ios" ? "padding" : "position"}
+
   >
   
-      <View style={styles.rectangle}>
+      <View style={[styles.rectangle, dynamicStyles.rectangle]}>
         <View style={styles.leftContainer}>
-          <TouchableOpacity style={styles.backButton}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("Navbar")}>
             <MaterialCommunityIcons
               name="arrow-left"
               size={width * 0.07}
-              color="black"
+              color= {isDarkMode ? "white" : "black"}
             />
           </TouchableOpacity>
-          <Text style={styles.text}>Notive AI</Text>
+          <Text style={[styles.text, dynamicStyles.text]}>Notive AI</Text>
         </View>
       </View>
     
 
-      {/* Input Rectangle with Native Scrollbar */}
-      <View style={styles.inputRectangle}>
+      {/* Messages Container */}
+      <View style={[styles.inputRectangle, dynamicStyles.inputRectangle]}>
         <ScrollView
-         showsVerticalScrollIndicator={true} // Enables simple scrollbar
-
+          showsVerticalScrollIndicator={true}
+          ref={scrollViewRef}
+          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
         >
-          <View style={styles.messageContainer}>
-            <Image
-              source={require("../../../assets/user_avatar.png")}
-              style={styles.AvatarImage}
-            />
-            <Text style={styles.question}>
-              Hi! I'm working on a new AI project but feeling stuck.
-            </Text>
-          </View>
-
-          <View style={styles.chatbotMessageContainer}>
-            <LinearGradient
-              colors={["#6340FF", "#FF40C6", "#FF8040"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.gradientInbox}
-            >
-              <Image
-                source={require("../../../assets/Chatbot_Star.png")}
-                style={styles.StarImage}
-              />
-            </LinearGradient>
-            <Text style={styles.response}>
-              <Text>I’d love to help you brainstorm!</Text>
-              {"\n\n"}
-              As a fellow AI enthusiast, I understand the excitement of creating
-              something innovative. Here are a few practical AI project ideas
-              that could make everyday life easier:
-              {"\n\n"}
-              
-              <Text style={styles.subHeading}>
-                1. KitchenGenius - An AI app that:
+          {messages.length === 0 ? (
+            <View style={styles.welcomeContainer}>
+              <Text style={[styles.welcomeText, dynamicStyles.welcomeText]}>
+                👋 Hi! I'm NotiveAI, your AI assistant. How can I help you today?
               </Text>
-              {"\n"} • <Text>Scans your fridge/pantry</Text>
-              {"\n"} •{" "}
-              <Text>Suggests recipes based on available ingredients</Text>
-              {"\n"} • <Text>Learns your dietary preferences over time</Text>
-              {"\n"} • <Text>Helps reduce food waste</Text>
-              {"\n\n"}
-              <Text style={styles.subHeading}>
-                2. FocusFriend - A productivity assistant that:
-              </Text>
-              {"\n"} • <Text>Analyzes your most productive work hours</Text>
-              {"\n"} • <Text>Suggests optimal break times</Text>
-              {"\n"} •{" "}
-              <Text>Blocks distracting apps/websites during focus periods</Text>
-              {"\n"} • <Text>Adapts to your work patterns</Text>
-              
-              
-            </Text>
-          </View>
+            </View>
+          ) : (
+            messages.map((msg, index) => (
+              <View key={index} style={msg.role === 'user' ? styles.userMessageContainer : styles.aiMessageContainer}>
+                {msg.role === 'user' ? (
+                  <View style={styles.userMessageWrapper}>
+                    <View style={[styles.userMessageBubble, dynamicStyles.userMessageBubble]}>
+                      <Text style={[styles.userMessageText, dynamicStyles.userMessageText]}>
+                        {msg.content}
+                      </Text>
+                    </View>
+                    <Image
+                      source={require("../../../assets/user_avatar.png")}
+                      style={[styles.userAvatar, dynamicStyles.userAvatar]}
+                    />
+                  </View>
+                ) : (
+                  <View style={styles.aiMessageWrapper}>
+                    <LinearGradient
+                      colors={["#6340FF", "#FF40C6", "#FF8040"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.aiIcon}
+                    >
+                      <Image
+                        source={require("../../../assets/Chatbot_Star.png")}
+                        style={styles.StarImage}
+                      />
+                    </LinearGradient>
+                    <View style={[styles.aiMessageBubble, dynamicStyles.aiMessageBubble]}>
+                      <Text style={[styles.aiMessageText, dynamicStyles.aiMessageText]}>
+                        {msg.content}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+            ))
+          )}
+          
+          {isLoading && (
+            <View style={styles.aiMessageContainer}>
+              <View style={styles.aiMessageWrapper}>
+                <LinearGradient
+                  colors={["#6340FF", "#FF40C6", "#FF8040"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.aiIcon}
+                >
+                  <Image
+                    source={require("../../../assets/Chatbot_Star.png")}
+                    style={styles.StarImage}
+                  />
+                </LinearGradient>
+                <View style={[styles.aiMessageBubble, dynamicStyles.aiMessageBubble]}>
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="small" color="#6340FF" />
+                    <Text style={[styles.loadingText, dynamicStyles.loadingText]}>
+                      NotiveAI is thinking...
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
         </ScrollView>
       </View>
 
-      <View style={styles.inputContainer}>
+      <View style={[styles.inputContainer, dynamicStyles.inputContainer]}>
         <TouchableOpacity>
         <Image
-          source={require("../../../assets/recording.png")}
+          source={isDarkMode ? require("../../../assets/recording2.png") : require("../../../assets/recording.png")}
           style={styles.IconImage}
         />
         </TouchableOpacity>
         <TextInput
-          style={styles.input}
-          placeholder="Ask NeuraAI anything..."
-          placeholderTextColor="#6F767E"
+          style={[styles.input, dynamicStyles.input]}
+          placeholder="Ask NotiveAI anything..."
+          placeholderTextColor= {isDarkMode ? "#A7ACB0" : "#6F767E"}
           value={message}
           onChangeText={setMessage}
         />
-        <TouchableOpacity onPress={handleSendMessage} style={styles.sendButton}>
-          <MaterialCommunityIcons name="send" size={25} color="white" />
+        <TouchableOpacity 
+          onPress={handleSendMessage} 
+          style={[styles.sendButton, isLoading && styles.sendButtonDisabled]}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <MaterialCommunityIcons name="send" size={25} color="white" />
+          )}
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -138,7 +230,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F4F4F4",
     alignItems: "center",
     justifyContent: "space-between", // Keeps positions stable
-    paddingTop: height * 0.05,
+    paddingTop: height * 0.02,
   },
   rectangle: {
     flexDirection: "row",
@@ -150,7 +242,6 @@ const styles = StyleSheet.create({
     borderColor: "#EFEFEF",
     borderRadius: 16,
     backgroundColor: "#FCFCFC",
-    marginTop: height * 0.015,
   },
   leftContainer: {
     flexDirection: "row",
@@ -174,6 +265,68 @@ const styles = StyleSheet.create({
     marginTop: height * 0.01,
     marginBottom: height * 0.01,
   },
+  // New chat layout styles
+  userMessageContainer: {
+    marginBottom: height * 0.02,
+    alignItems: "flex-end",
+  },
+  aiMessageContainer: {
+    marginBottom: height * 0.02,
+    alignItems: "flex-start",
+  },
+  userMessageWrapper: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    maxWidth: width * 0.75,
+  },
+  aiMessageWrapper: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    maxWidth: width * 0.85,
+  },
+  userMessageBubble: {
+    backgroundColor: "#6340FF",
+    paddingHorizontal: width * 0.04,
+    paddingVertical: height * 0.015,
+    borderRadius: 20,
+    borderBottomRightRadius: 5,
+    marginRight: width * 0.02,
+  },
+  aiMessageBubble: {
+    backgroundColor: "#F8F9FA",
+    paddingHorizontal: width * 0.04,
+    paddingVertical: height * 0.015,
+    borderRadius: 20,
+    borderBottomLeftRadius: 5,
+    marginLeft: width * 0.02,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  userMessageText: {
+    color: "white",
+    fontSize: width * 0.04,
+    fontWeight: "500",
+  },
+  aiMessageText: {
+    color: "#1A1D1F",
+    fontSize: width * 0.04,
+    fontWeight: "500",
+    lineHeight: width * 0.05,
+  },
+  userAvatar: {
+    width: width * 0.08,
+    height: width * 0.08,
+    borderRadius: 20,
+    backgroundColor: "#BBCEC5",
+  },
+  aiIcon: {
+    width: width * 0.08,
+    height: width * 0.08,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  // Legacy styles (keeping for compatibility)
   messageContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -244,5 +397,84 @@ const styles = StyleSheet.create({
     backgroundColor: "#6340FF",
     padding: width * 0.025,
     borderRadius: 30,
+  },
+  sendButtonDisabled: {
+    backgroundColor: "#9CA3AF",
+  },
+  welcomeContainer: {
+    alignItems: "center",
+    paddingVertical: height * 0.04,
+  },
+  welcomeText: {
+    fontSize: width * 0.04,
+    color: "#6F767E",
+    textAlign: "center",
+    fontWeight: "500",
+  },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexShrink: 1,
+  },
+  loadingText: {
+    fontSize: width * 0.035,
+    color: "#6F767E",
+    marginLeft: width * 0.02,
+    fontStyle: "italic",
+  },
+});
+
+
+
+const darkModeStyles = StyleSheet.create({
+  container: {
+    backgroundColor: "#111315",
+  },
+  rectangle: {
+    borderColor: "#1A1D1F",
+    backgroundColor: "#1A1D1F",
+  },
+  text: {
+    color: "white",
+  },
+  inputRectangle: {
+    backgroundColor: "#1A1D1F",
+    borderColor: "#1A1D1F",
+  },
+
+  AvatarImage: {
+    backgroundColor: "#CBDED5",
+  },
+  question: {
+    color: "#6F767E",
+  },
+  response: {
+    color: "#E0E3E5",
+  },
+  inputContainer: {
+    backgroundColor: "#1A1D1F",
+    borderColor: "#1A1D1F",
+  },
+  input: {
+    color: "#A7ACB0",
+  },
+  welcomeText: {
+    color: "#9CA3AF",
+  },
+  loadingText: {
+    color: "#9CA3AF",
+  },
+  userMessageBubble: {
+    backgroundColor: "#8246FB",
+  },
+  aiMessageBubble: {
+    backgroundColor: "#2A2D2F",
+    borderColor: "#3A3D40",
+  },
+  aiMessageText: {
+    color: "#E0E3E5",
+  },
+  userAvatar: {
+    backgroundColor: "#CBDED5",
   },
 });
