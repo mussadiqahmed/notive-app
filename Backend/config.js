@@ -5,8 +5,8 @@ const config = {
     apiURL: 'http://192.168.254.207:3000'
   },
   production: {
-    baseURL: 'https://notive-app-backend.onrender.com', // Replace with your actual Render URL
-    apiURL: 'https://notive-app-backend.onrender.com'
+    baseURL: 'https://notive-app.onrender.com',
+    apiURL: 'https://notive-app.onrender.com'
   }
 };
 
